@@ -3,25 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Socio - Marvin Gym</title>
+    <title>Registro - Marvin Gym</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #050505; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .card { background-color: #121212; border: 2px solid #facc15; padding: 30px; border-radius: 16px; max-width: 400px; width: 100%; text-align: center; }
-        h1 { color: #facc15; margin-bottom: 20px; font-size: 24px; text-transform: uppercase; }
-        label { display: block; text-align: left; font-size: 12px; color: #facc15; margin-top: 10px; margin-bottom: 4px; font-weight: bold; text-transform: uppercase; }
-        input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #27272a; background: #000; color: #fff; font-size: 14px; outline: none; }
+        body { font-family: 'Segoe UI', sans-serif; background: #050505; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .card { background: #121212; border: 1px solid #facc15; border-radius: 12px; padding: 30px; width: 100%; max-width: 420px; box-shadow: 0 4px 20px rgba(250, 204, 21, 0.15); }
+        h1 { color: #facc15; text-align: center; text-transform: uppercase; font-size: 24px; margin-bottom: 20px; letter-spacing: 1px; }
+        .alert { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; color: #a1a1aa; text-transform: uppercase; margin-bottom: 6px; font-weight: bold; }
+        input { width: 100%; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 6px; color: #fff; font-size: 14px; outline: none; }
         input:focus { border-color: #facc15; }
-        button { width: 100%; background: #facc15; color: #000; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 16px; margin-top: 20px; cursor: pointer; text-transform: uppercase; }
-        button:hover { background: #eab308; }
-        a { color: #a1a1aa; font-size: 13px; text-decoration: none; display: block; margin-top: 15px; }
-        a:hover { color: #facc15; }
-        .alert { background: #7f1d1d; color: #fca5a5; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 6px; color: #000; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 14px; margin-top: 10px; }
+        .btn:hover { background: #eab308; }
+        .link { text-align: center; margin-top: 20px; font-size: 13px; color: #a1a1aa; }
+        .link a { color: #facc15; text-decoration: none; font-weight: bold; }
+        .link a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1>Registro de Socio</h1>
+        <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-bottom: 20px;">Marvin Gym</p>
+        
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             {% for message in messages %}
@@ -29,18 +33,30 @@
             {% endfor %}
           {% endif %}
         {% endwith %}
+
         <form action="/registro" method="POST">
-            <label>Nombre y Apellido</label>
-            <input type="text" name="nombre" placeholder="Ej: Alfredo Zambrano" required>
-            <label>Cédula de Identidad</label>
-            <input type="text" name="cedula" placeholder="Ej: 13210442" required>
-            <label>Teléfono WhatsApp</label>
-            <input type="text" name="telefono" placeholder="Ej: 04123931166" required>
-            <label>Crear Contraseña</label>
-            <input type="password" name="password" required>
-            <button type="submit">Crear Mi Cuenta</button>
+            <div class="form-group">
+                <label>Nombre Completo</label>
+                <input type="text" name="nombre" placeholder="Ej: Alfredo Zambrano" required>
+            </div>
+            <div class="form-group">
+                <label>Cédula de Identidad</label>
+                <input type="text" name="cedula" placeholder="Ej: 28123456" required>
+            </div>
+            <div class="form-group">
+                <label>Número de Teléfono (WhatsApp)</label>
+                <input type="text" name="telefono" placeholder="Ej: 04141234567" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn">Crear Cuenta</button>
         </form>
-        <a href="/login">¿Ya tienes cuenta? Inicia sesión</a>
+
+        <div class="link">
+            ¿Ya tienes una cuenta? <a href="/login">Inicia sesión aquí</a>
+        </div>
     </div>
 </body>
 </html>

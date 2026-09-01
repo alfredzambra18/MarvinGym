@@ -6,32 +6,39 @@
     <title>Mi Perfil - Marvin Gym</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background-color: #050505; color: #fff; padding: 20px; max-width: 600px; margin: 0 auto; }
+        body { font-family: 'Segoe UI', sans-serif; background: #050505; color: #fff; padding: 20px; max-width: 600px; margin: 0 auto; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h1 { color: #facc15; font-size: 22px; text-transform: uppercase; }
-        .logout { color: #ef4444; text-decoration: none; font-weight: bold; font-size: 14px; }
-        .card { background: #121212; border: 1px solid #27272a; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .status-box { text-align: center; border: 2px solid; padding: 15px; border-radius: 10px; margin-top: 10px; }
-        .status-ACTIVA { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); color: #4ade80; }
-        .status-VENCIDA { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); color: #f87171; }
-        .pm-box { background: #000; border: 1px dashed #facc15; border-radius: 8px; padding: 12px; margin-bottom: 15px; font-size: 13px; }
-        label { display: block; font-size: 11px; color: #facc15; margin-top: 10px; margin-bottom: 4px; font-weight: bold; text-transform: uppercase; }
-        input, select { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #27272a; background: #000; color: #fff; font-size: 14px; }
-        button { width: 100%; background: #facc15; color: #000; border: none; padding: 12px; border-radius: 6px; font-weight: bold; font-size: 15px; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
+        .btn-logout { background: #27272a; color: #ef4444; text-decoration: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; }
+        .alert { background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #4ade80; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; text-align: center; }
+        .card { background: #121212; border: 1px solid #27272a; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .status-box { text-align: center; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .status-ACTIVA { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #22c55e; }
+        .status-VENCIDA { background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #ef4444; }
+        .pago-info { background: #18181b; border: 1px solid #27272a; padding: 12px; border-radius: 8px; font-size: 13px; margin-bottom: 15px; line-height: 1.6; }
+        .pago-info strong { color: #facc15; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; color: #a1a1aa; text-transform: uppercase; margin-bottom: 6px; font-weight: bold; }
+        input, select { width: 100%; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 6px; color: #fff; font-size: 14px; outline: none; }
+        input:focus, select:focus { border-color: #facc15; }
+        .btn { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 6px; color: #000; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 14px; }
+        .btn:hover { background: #eab308; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #27272a; }
-        th { color: #facc15; text-transform: uppercase; font-size: 11px; }
-        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        th { color: #facc15; text-transform: uppercase; font-size: 11px; background: #18181b; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; }
         .badge-Aprobado { background: #22c55e; color: #000; }
         .badge-Pendiente { background: #facc15; color: #000; }
         .badge-Rechazado { background: #ef4444; color: #fff; }
-        .alert { background: #14532d; color: #4ade80; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Marvin <span>Gym</span></h1>
-        <a href="/logout" class="logout">Cerrar Sesión</a>
+        <div>
+            <p style="color: #a1a1aa; font-size: 12px;">Bienvenido(a),</p>
+            <h1>{{ user.nombre }}</h1>
+        </div>
+        <a href="/logout" class="btn-logout">Cerrar Sesión</a>
     </div>
 
     {% with messages = get_flashed_messages() %}
@@ -42,48 +49,61 @@
       {% endif %}
     {% endwith %}
 
+    <!-- Estado de Membresía -->
     <div class="card">
-        <h3>Bienvenido, {{ user.nombre }}</h3>
-        <p style="color: #a1a1aa; font-size: 13px;">Cédula: {{ user.cedula }}</p>
-
+        <h3 style="color: #facc15; font-size: 14px; text-transform: uppercase; margin-bottom: 10px;">Estado de tu Membresía</h3>
+        <p style="font-size: 13px; color: #a1a1aa;">Cédula: <strong>{{ user.cedula }}</strong></p>
+        <p style="font-size: 13px; color: #a1a1aa;">Vencimiento: <strong>{{ user.vencimiento }}</strong></p>
+        
         <div class="status-box status-{{ user.estado }}">
-            <h2 style="font-size: 20px;">MEMBRESÍA {{ user.estado }}</h2>
-            <p style="margin-top: 5px;">Vence el: <strong>{{ user.vencimiento }}</strong></p>
+            <h2 style="font-size: 20px; text-transform: uppercase;">MEMBRESÍA {{ user.estado }}</h2>
+            {% if user.dias > 0 %}
+                <p style="font-size: 13px; margin-top: 4px;">Te quedan <strong>{{ user.dias }}</strong> días de gimnasio.</p>
+            {% else %}
+                <p style="font-size: 13px; margin-top: 4px;">Tu pase ha vencido. Realiza tu Pago Móvil para renovar.</p>
+            {% endif %}
         </div>
     </div>
 
+    <!-- Reportar Pago -->
     <div class="card">
-        <h3 style="color: #facc15; margin-bottom: 10px;">Reportar Pago</h3>
+        <h3 style="color: #facc15; font-size: 14px; text-transform: uppercase; margin-bottom: 12px;">Reportar Pago Móvil</h3>
         
-        <div class="pm-box">
-            <strong style="color: #facc15;">Pago Móvil:</strong> {{ pago_movil.banco }} | {{ pago_movil.cedula }} | {{ pago_movil.telefono }}
+        <div class="pago-info">
+            <p><strong>Banco:</strong> {{ pago_movil.banco }}</p>
+            <p><strong>Cédula:</strong> {{ pago_movil.cedula }}</p>
+            <p><strong>Teléfono:</strong> {{ pago_movil.telefono }}</p>
         </div>
 
         <form action="/reportar_pago" method="POST" enctype="multipart/form-data">
-            <label>Plan a Pagar</label>
-            <select name="tipo_plan" required>
-                <option value="Mensualidad">Mensualidad ($10)</option>
-                <option value="Pase Diario">Pase Diario ($1)</option>
-            </select>
-
-            <label>Número de Referencia</label>
-            <input type="text" name="referencia" placeholder="Ej: 849201" required>
-
-            <label>Comprobante (Imagen)</label>
-            <input type="file" name="comprobante" accept="image/*" required>
-
-            <button type="submit">Enviar Comprobante</button>
+            <div class="form-group">
+                <label>Tipo de Plan</label>
+                <select name="tipo_plan">
+                    <option value="Mensualidad">Mensualidad ($10)</option>
+                    <option value="Dia">Día ($1)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Número de Referencia (4 a 6 dígitos)</label>
+                <input type="text" name="referencia" placeholder="Ej: 123456" required>
+            </div>
+            <div class="form-group">
+                <label>Capture / Comprobante de Pago</label>
+                <input type="file" name="comprobante" accept="image/*" required>
+            </div>
+            <button type="submit" class="btn">Enviar Comprobante</button>
         </form>
     </div>
 
+    <!-- Historial de Facturas -->
     <div class="card">
-        <h3 style="color: #facc15; margin-bottom: 10px;">Mis Facturas y Pagos</h3>
+        <h3 style="color: #facc15; font-size: 14px; text-transform: uppercase; margin-bottom: 10px;">Historial de Pagos</h3>
         {% if facturas %}
         <table>
             <thead>
                 <tr>
+                    <th>Fecha</th>
                     <th>Plan</th>
-                    <th>Monto</th>
                     <th>Ref</th>
                     <th>Estado</th>
                 </tr>
@@ -91,8 +111,8 @@
             <tbody>
                 {% for f in facturas %}
                 <tr>
-                    <td>{{ f[0] }}</td>
-                    <td>${{ f[1] }}</td>
+                    <td>{{ f[4][:10] }}</td>
+                    <td>{{ f[0] }} (${{ f[1] }})</td>
                     <td>{{ f[2] }}</td>
                     <td><span class="badge badge-{{ f[3] }}">{{ f[3] }}</span></td>
                 </tr>
@@ -100,7 +120,7 @@
             </tbody>
         </table>
         {% else %}
-        <p style="color: #71717a; font-size: 13px;">No has realizado ningún pago aún.</p>
+        <p style="color: #71717a; font-style: italic; font-size: 13px;">No has reportado pagos aún.</p>
         {% endif %}
     </div>
 </body>
