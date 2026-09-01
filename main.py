@@ -6,13 +6,12 @@ from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
-app.secret_key = 'marvingym_secret_key_123'
+app.secret_key = 'marvingym_key_2026'
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Max 16MB
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Datos de Pago Móvil del Gimnasio
 PAGO_MOVIL = {
     "banco": "Banesco (0134)",
     "cedula": "V-13210442",
@@ -20,7 +19,7 @@ PAGO_MOVIL = {
 }
 
 def get_db_connection():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect('gym.db')
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -28,7 +27,6 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Tabla de Socios
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS socios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +39,6 @@ def init_db():
         )
     ''')
     
-    # Tabla de Pagos Pendientes y Facturas
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS pagos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +53,6 @@ def init_db():
         )
     ''')
     
-    # Tabla de Caja / Contabilidad
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS contabilidad (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,8 +68,6 @@ def init_db():
 
 init_db()
 
-# --- RUTAS DE CLIENTES ---
-
 @app.route('/')
 def home():
     if 'socio_id' in session:
@@ -83,11 +77,15 @@ def home():
 @app.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
-        nombre = request.form['nombre'].strip()
-        cedula = request.form['cedula'].strip()
-        telefono = request.form['telefono'].strip()
-        password = request.form['password'].strip()
+        nombre = request.form.get('nombre', '').strip()
+        cedula = request.form.get('cedula', '').strip()
+        telefono = request.form.get('telefono', '').strip()
+        password = request.form.get('password', '').strip()
         
+        if not nombre or not cedula or not password:
+            flash('Por favor completa todos los campos requeridos.')
+            return redirect(url_for('registro'))
+
         hashed_pw = generate_password_hash(password)
         
         conn = get_db_connection()
@@ -109,8 +107,8 @@ def registro():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        cedula = request.form['cedula'].strip()
-        password = request.form['password'].strip()
+        cedula = request.form.get('cedula', '').strip()
+        password = request.form.get('password', '').strip()
         
         conn = get_db_connection()
         socio = conn.execute('SELECT * FROM socios WHERE cedula = ?', (cedula,)).fetchone()
@@ -143,7 +141,10 @@ def perfil():
     ).fetchall()
     conn.close()
     
-    # Cálculo de estado y días restantes
+    if not socio:
+        session.clear()
+        return redirect(url_for('login'))
+
     estado = "VENCIDA"
     dias = 0
     venc_str = "No registrada"
@@ -174,8 +175,8 @@ def reportar_pago():
     if 'socio_id' not in session:
         return redirect(url_for('login'))
         
-    tipo_plan = request.form['tipo_plan']
-    referencia = request.form['referencia'].strip()
+    tipo_plan = request.form.get('tipo_plan', 'Mensualidad')
+    referencia = request.form.get('referencia', '').strip()
     file = request.files.get('comprobante')
     
     monto = 10.0 if tipo_plan == 'Mensualidad' else 1.0
@@ -196,8 +197,6 @@ def reportar_pago():
     flash('¡Comprobante enviado con éxito! El administrador lo verificará pronto.')
     return redirect(url_for('perfil'))
 
-# --- RUTA ADMINISTRATIVA ---
-
 @app.route('/admin')
 def admin():
     conn = get_db_connection()
@@ -213,6 +212,22 @@ def admin():
     
     return render_template('admin.html', socios=socios, pagos=pagos_pendientes)
 
+@app.route('/admin/socio/<int:socio_id>')
+def detalle_socio(socio_id):
+    conn = get_db_connection()
+    socio = conn.execute('SELECT * FROM socios WHERE id = ?', (socio_id,)).fetchone()
+    facturas = conn.execute(
+        'SELECT * FROM pagos WHERE socio_id = ? ORDER BY id DESC',
+        (socio_id,)
+    ).fetchall()
+    conn.close()
+    
+    if not socio:
+        flash('Socio no encontrado.')
+        return redirect(url_for('admin'))
+        
+    return render_template('detalle_socio.html', socio=socio, facturas=facturas)
+
 @app.route('/admin/aprobar_pago/<int:pago_id>')
 def aprobar_pago(pago_id):
     conn = get_db_connection()
@@ -221,7 +236,6 @@ def aprobar_pago(pago_id):
     if pago:
         conn.execute('UPDATE pagos SET estado = "Aprobado" WHERE id = ?', (pago_id,))
         
-        # Extender vencimiento del socio 30 días
         hoy = datetime.now().date()
         socio = conn.execute('SELECT vencimiento FROM socios WHERE id = ?', (pago['socio_id'],)).fetchone()
         
@@ -237,7 +251,6 @@ def aprobar_pago(pago_id):
         conn.execute('UPDATE socios SET vencimiento = ?, monto_ultimo_pago = ? WHERE id = ?', 
                      (nueva_fecha.strftime('%Y-%m-%d'), pago['monto'], pago['socio_id']))
                      
-        # Registrar en caja
         conn.execute('INSERT INTO contabilidad (tipo, monto, descripcion) VALUES ("Ingreso", ?, ?)',
                      (pago['monto'], f"Pago {pago['tipo_plan']} - Socio ID {pago['socio_id']}"))
                      
@@ -248,4 +261,4 @@ def aprobar_pago(pago_id):
     return redirect(url_for('admin'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
