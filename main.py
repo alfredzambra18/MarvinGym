@@ -174,6 +174,7 @@ def reportar_pago():
 
 @app.route('/admin')
 def admin():
+    from datetime import datetime
     conn = get_db()
     cursor = conn.cursor()
     pendientes = cursor.execute("""
@@ -183,8 +184,28 @@ def admin():
         WHERE f.estado = 'Pendiente'
         ORDER BY f.id DESC
     """).fetchall()
-    socios = cursor.execute("SELECT * FROM socios ORDER BY id DESC").fetchall()
+    raw_socios = cursor.execute('SELECT * FROM socios ORDER BY id DESC').fetchall()
     conn.close()
+    socios = []
+    hoy = datetime.now().date()
+    for s in raw_socios:
+        s_dict = dict(s)
+        venc_str = s_dict.get('vencimiento', '')
+        dias = 0
+        alerta = 'al-dia'
+        try:
+            venc_date = datetime.strptime(venc_str, '%Y-%m-%d').date()
+            dias = (venc_date - hoy).days
+            if dias < 0:
+                alerta = 'vencido'
+            elif dias <= 3:
+                alerta = 'por-vencer'
+        except:
+            dias = 0
+        s_dict['fecha_vencimiento'] = venc_str
+        s_dict['dias'] = dias
+        s_dict['alerta'] = alerta
+        socios.append(s_dict)
     return render_template('admin.html', pendientes=pendientes, socios=socios)
 def aprobar_pago(factura_id):
     conn = get_db()
