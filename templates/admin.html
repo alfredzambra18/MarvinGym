@@ -17,11 +17,17 @@
         .red { color: #ef4444; font-weight: bold; }
         .yellow { color: #facc15; font-weight: bold; }
         .green { color: #22c55e; font-weight: bold; }
-        .btn { padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; display: inline-block; text-transform: uppercase; }
+        .btn { padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; display: inline-block; text-transform: uppercase; }
         .btn-green { background-color: #22c55e; color: #000; }
         .btn-green:hover { background-color: #16a34a; color: #fff; }
         .btn-red { background-color: #dc2626; color: #fff; }
         .btn-red:hover { background-color: #b91c1c; }
+        .btn-ws { background-color: #25D366; color: #000; font-weight: bold; }
+        .btn-ws:hover { background-color: #1ebc57; }
+        .btn-info { background-color: #3b82f6; color: #fff; }
+        .btn-info:hover { background-color: #2563eb; }
+        a.socio-link { color: #facc15; font-weight: bold; text-decoration: none; }
+        a.socio-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -42,21 +48,25 @@
                 <th>Monto</th>
                 <th>Referencia</th>
                 <th>Comprobante</th>
+                <th>Contactar</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for p in pendientes %}
             <tr>
-                <td>{{ p[1] }}</td>
-                <td>{{ p[2] }}</td>
-                <td>{{ p[3] }}</td>
-                <td>${{ p[4] }}</td>
-                <td>{{ p[5] }}</td>
-                <td><a href="/static/uploads/{{ p[6] }}" target="_blank" style="color:#facc15; font-weight: bold; text-decoration: none;">Ver Capture</a></td>
+                <td>{{ p.nombre }}</td>
+                <td>{{ p.cedula }}</td>
+                <td>{{ p.tipo_plan }}</td>
+                <td>${{ p.monto }}</td>
+                <td>{{ p.referencia }}</td>
+                <td><a href="/static/uploads/{{ p.comprobante_path }}" target="_blank" style="color:#facc15; font-weight: bold; text-decoration: none;">Ver Capture</a></td>
                 <td>
-                    <a href="/aprobar_pago/{{ p[0] }}" class="btn btn-green">Aprobar</a>
-                    <a href="/eliminar_pago/{{ p[0] }}" onclick="return confirm('¿Seguro que deseas rechazar este pago?');" class="btn btn-red" style="margin-left: 6px;">Rechazar</a>
+                    <a href="https://wa.me/{{ p.ws_phone }}?text=Hola%20{{ p.nombre }},%20te%20escribimos%20de%20Marvin%20Gym%20respecto%20a%20tu%20pago%20Ref:%20{{ p.referencia }}" target="_blank" class="btn btn-ws">WhatsApp</a>
+                </td>
+                <td>
+                    <a href="/aprobar_pago/{{ p.id }}" class="btn btn-green">Aprobar</a>
+                    <a href="/eliminar_pago/{{ p.id }}" onclick="return confirm('¿Seguro que deseas rechazar este pago?');" class="btn btn-red">Rechazar</a>
                 </td>
             </tr>
             {% endfor %}
@@ -75,12 +85,13 @@
                 <th>Teléfono</th>
                 <th>Vencimiento</th>
                 <th>Estado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for s in socios %}
             <tr>
-                <td>{{ s.nombre }}</td>
+                <td><a href="/admin/socio/{{ s.id }}" class="socio-link">{{ s.nombre }}</a></td>
                 <td>{{ s.cedula }}</td>
                 <td>{{ s.telefono }}</td>
                 <td>{{ s.fecha_vencimiento }}</td>
@@ -88,6 +99,10 @@
                     {% if s.dias < 0 %} Vencido (hace {{ s.dias | abs }} días)
                     {% elif s.dias <= 3 %} Por vencer ({{ s.dias }} días)
                     {% else %} Al día {% endif %}
+                </td>
+                <td>
+                    <a href="https://wa.me/{{ s.ws_phone }}?text=Hola%20{{ s.nombre }},%20te%20escribimos%20de%20Marvin%20Gym" target="_blank" class="btn btn-ws">WhatsApp</a>
+                    <a href="/admin/socio/{{ s.id }}" class="btn btn-info" style="margin-left: 4px;">Ver Pagos</a>
                 </td>
             </tr>
             {% endfor %}

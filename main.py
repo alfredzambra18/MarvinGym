@@ -57,6 +57,14 @@ def init_db():
 
 init_db()
 
+def format_ws_phone(phone_str):
+    clean = "".join(filter(str.isdigit, phone_str))
+    if clean.startswith("0"):
+        clean = "58" + clean[1:]
+    elif not clean.startswith("58") and len(clean) == 10:
+        clean = "58" + clean
+    return clean
+
 @app.route('/')
 def index():
     if 'usuario_id' in session:
@@ -177,25 +185,34 @@ def admin():
     c = conn.cursor()
 
     c.execute('''
-        SELECT p.id, u.nombre, u.cedula, p.tipo_plan, p.monto, p.referencia, p.comprobante_path 
+        SELECT p.id, u.nombre, u.cedula, p.tipo_plan, p.monto, p.referencia, p.comprobante_path, u.telefono 
         FROM pagos p 
         JOIN usuarios u ON p.usuario_id = u.id 
         WHERE p.estado = 'Pendiente' 
         ORDER BY p.fecha_registro DESC
     ''')
-    pendientes = c.fetchall()
+    raw_pendientes = c.fetchall()
+
+    pendientes = []
+    for p in raw_pendientes:
+        pendientes.append({
+            'id': p[0], 'nombre': p[1], 'cedula': p[2], 'tipo_plan': p[3],
+            'monto': p[4], 'referencia': p[5], 'comprobante_path': p[6],
+            'telefono': p[7], 'ws_phone': format_ws_phone(p[7])
+        })
 
     c.execute('SELECT id, nombre, cedula, telefono, fecha_vencimiento FROM usuarios ORDER BY fecha_vencimiento ASC')
-    socios = c.fetchall()
+    socios_raw = c.fetchall()
     
     hoy = datetime.now().date()
-    socios_list = []
-    for s in socios:
+    socios = []
+    for s in socios_raw:
         venc = datetime.strptime(s[4], '%Y-%m-%d').date()
         dias = (venc - hoy).days
         alerta = 'green' if dias > 3 else ('yellow' if dias >= 0 else 'red')
-        socios_list.append({
+        socios.append({
             'id': s[0], 'nombre': s[1], 'cedula': s[2], 'telefono': s[3],
+            'ws_phone': format_ws_phone(s[3]),
             'fecha_vencimiento': s[4], 'dias': dias, 'alerta': alerta
         })
 
@@ -203,7 +220,36 @@ def admin():
     balance = c.fetchone()[0] or 0.0
 
     conn.close()
-    return render_template('admin.html', pendientes=pendientes, socios=socios_list, balance=balance)
+    return render_template('admin.html', pendientes=pendientes, socios=socios, balance=balance)
+
+@app.route('/admin/socio/<int:usuario_id>')
+def detalle_socio(usuario_id):
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+
+    c.execute('SELECT id, nombre, cedula, telefono, fecha_vencimiento FROM usuarios WHERE id = ?', (usuario_id,))
+    user = c.fetchone()
+
+    if not user:
+        conn.close()
+        return "Socio no encontrado", 404
+
+    c.execute('''
+        SELECT tipo_plan, monto, referencia, comprobante_path, estado, fecha_registro 
+        FROM pagos WHERE usuario_id = ? ORDER BY fecha_registro DESC
+    ''', (usuario_id,))
+    pagos = c.fetchall()
+    conn.close()
+
+    hoy = datetime.now().date()
+    venc = datetime.strptime(user[4], '%Y-%m-%d').date()
+    dias = (venc - hoy).days
+
+    return render_template('detalle_socio.html', socio={
+        'id': user[0], 'nombre': user[1], 'cedula': user[2], 'telefono': user[3],
+        'ws_phone': format_ws_phone(user[3]),
+        'fecha_vencimiento': user[4], 'dias': dias
+    }, pagos=pagos)
 
 @app.route('/aprobar_pago/<int:pago_id>')
 def aprobar_pago(pago_id):
