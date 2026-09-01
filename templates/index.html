@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscripción - Marvin Gym</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background: #121212; color: #fff; padding: 20px; max-width: 400px; margin: 0 auto; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #ffcc00; }
+        h1 { color: #ffcc00; text-align: center; font-size: 1.5rem; margin-bottom: 15px; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #333; background: #2a2a2a; color: white; }
+        button { background: #ffcc00; color: #000; font-weight: bold; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>MARVIN GYM ⚡</h1>
+        <p style="text-align:center; color:#aaa; font-size:0.85rem; margin-bottom:15px;">Completa tus datos para inscribirte</p>
+        
+        <form id="form-registro" onsubmit="enviarInscripcion(event)">
+            <input type="text" id="nombre" placeholder="Nombre y Apellido" required>
+            <input type="tel" id="telefono" placeholder="Número de WhatsApp (ej: 04121234567)" required>
+            <select id="plan" required>
+                <option value="Mensual">Plan Mensual ($25)</option>
+                <option value="Trimestral">Plan Trimestral ($65)</option>
+            </select>
+            <button type="submit">Enviar Inscripción</button>
+        </form>
+    </div>
+
+    <script>
+        function enviarInscripcion(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('nombre').value;
+            const tel = document.getElementById('telefono').value;
+            const plan = document.getElementById('plan').value;
+
+            // Teléfono del dueño de Marvin Gym (sustituir por el número real)
+            const numDueno = "584120000000"; 
+            
+            const texto = `Hola, quiero inscribirme en Marvin Gym.%0A%0A*Nombre:* ${encodeURIComponent(nombre)}%0A*Teléfono:* ${encodeURIComponent(tel)}%0A*Plan elegido:* ${encodeURIComponent(plan)}`;
+            
+            // Redirige directamente al WhatsApp del dueño con la ficha armada
+            window.location.href = `https://wa.me/${numDueno}?text=${texto}`;
+        }
+    </script>
+</body>
+</html>
