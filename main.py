@@ -164,8 +164,8 @@ def reportar_pago():
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO facturas (socio_id, tipo_plan, monto, referencia, comprobante, estado)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (session['socio_id'], tipo_plan, monto, referencia, filename))
+    VALUES (?, ?, ?, ?, ?, ?)
+    ''', (session['socio_id'], tipo_plan, monto, referencia, filename, 'Pendiente'))
     conn.commit()
     conn.close()
 
