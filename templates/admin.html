@@ -6,15 +6,14 @@
     <title>Panel Administrativo - Marvin Gym</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #050505; color: #ffffff; padding: 30px; position: relative; }
-        .brand-logo { position: absolute; top: 20px; right: 30px; font-weight: 800; font-size: 14px; color: #facc15; letter-spacing: 2px; opacity: 0.8; text-transform: lowercase; }
-        h1 { color: #facc15; font-size: 28px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #050505; color: #ffffff; padding: 30px; }
+        h1 { color: #facc15; font-size: 28px; margin-bottom: 20px; text-transform: uppercase; }
         h2 { color: #e4e4e7; font-size: 18px; margin-top: 30px; margin-bottom: 12px; }
         .box { background-color: #121212; border: 1px solid #facc15; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: inline-block; }
         .box h3 { color: #facc15; font-size: 20px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; background-color: #121212; border-radius: 10px; overflow: hidden; border: 1px solid #27272a; }
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid #27272a; font-size: 14px; }
-        th { background-color: #18181b; color: #facc15; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+        th { background-color: #18181b; color: #facc15; text-transform: uppercase; font-size: 12px; }
         .red { color: #ef4444; font-weight: bold; }
         .yellow { color: #facc15; font-weight: bold; }
         .green { color: #22c55e; font-weight: bold; }
@@ -23,12 +22,9 @@
         .btn-green:hover { background-color: #16a34a; color: #fff; }
         .btn-red { background-color: #dc2626; color: #fff; }
         .btn-red:hover { background-color: #b91c1c; }
-        .btn-ws { background-color: #25d366; color: #000; }
-        .btn-ws:hover { background-color: #1da851; color: #fff; }
     </style>
 </head>
 <body>
-    <div class="brand-logo">xp_afx</div>
     <h1>Panel Administrativo - Marvin Gym</h1>
     
     <div class="box">
@@ -46,20 +42,21 @@
                 <th>Monto</th>
                 <th>Referencia</th>
                 <th>Comprobante</th>
-                <th>Acción</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for p in pendientes %}
             <tr>
-                <td>{{ p.nombre }}</td>
-                <td>{{ p.cedula }}</td>
-                <td>{{ p.tipo_plan }}</td>
-                <td>${{ p.monto }}</td>
-                <td>{{ p.referencia }}</td>
-                <td><a href="/static/uploads/{{ p.comprobante_path }}" target="_blank" style="color:#facc15; font-weight: bold; text-decoration: none;">Ver Capture</a></td>
+                <td>{{ p[1] }}</td>
+                <td>{{ p[2] }}</td>
+                <td>{{ p[3] }}</td>
+                <td>${{ p[4] }}</td>
+                <td>{{ p[5] }}</td>
+                <td><a href="/static/uploads/{{ p[6] }}" target="_blank" style="color:#facc15; font-weight: bold; text-decoration: none;">Ver Capture</a></td>
                 <td>
-                    <a href="/aprobar_pago/{{ p.id }}" class="btn btn-green">Aprobar</a>
+                    <a href="/aprobar_pago/{{ p[0] }}" class="btn btn-green">Aprobar</a>
+                    <a href="/eliminar_pago/{{ p[0] }}" onclick="return confirm('¿Seguro que deseas rechazar este pago?');" class="btn btn-red" style="margin-left: 6px;">Rechazar</a>
                 </td>
             </tr>
             {% endfor %}
@@ -69,7 +66,7 @@
     <p style="color: #71717a; font-style: italic;">No hay pagos pendientes por revisar en este momento.</p>
     {% endif %}
 
-    <h2>Listado de Socios</h2>
+    <h2>Listado de Socios Registrados</h2>
     <table>
         <thead>
             <tr>
@@ -78,24 +75,19 @@
                 <th>Teléfono</th>
                 <th>Vencimiento</th>
                 <th>Estado</th>
-                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for m in miembros %}
+            {% for s in socios %}
             <tr>
-                <td>{{ m.nombre }}</td>
-                <td>{{ m.cedula }}</td>
-                <td>{{ m.telefono }}</td>
-                <td>{{ m.fecha_vencimiento }}</td>
-                <td class="{{ m.alerta }}">
-                    {% if m.dias < 0 %} Vencido (hace {{ m.dias | abs }} días)
-                    {% elif m.dias <= 3 %} Por vencer ({{ m.dias }} días)
+                <td>{{ s.nombre }}</td>
+                <td>{{ s.cedula }}</td>
+                <td>{{ s.telefono }}</td>
+                <td>{{ s.fecha_vencimiento }}</td>
+                <td class="{{ s.alerta }}">
+                    {% if s.dias < 0 %} Vencido (hace {{ s.dias | abs }} días)
+                    {% elif s.dias <= 3 %} Por vencer ({{ s.dias }} días)
                     {% else %} Al día {% endif %}
-                </td>
-                <td>
-                    <a href="https://wa.me/{{ m.telefono }}?text=Hola%20{{ m.nombre }},%20te%20recordamos%20que%20tu%20mensualidad%20en%20Marvin%20Gym%20esta%20por%20vencer." target="_blank" class="btn btn-ws">WhatsApp</a>
-                    <a href="/eliminar_miembro/{{ m.id }}" onclick="return confirm('¿Seguro que deseas eliminar este socio?');" class="btn btn-red" style="margin-left: 8px;">Eliminar</a>
                 </td>
             </tr>
             {% endfor %}
