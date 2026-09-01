@@ -207,6 +207,7 @@ def admin():
         s_dict['alerta'] = alerta
         socios.append(s_dict)
     return render_template('admin.html', pendientes=pendientes, socios=socios)
+@app.route('/admin/aprobar/<int:factura_id>')
 def aprobar_pago(factura_id):
     conn = get_db()
     cursor = conn.cursor()
