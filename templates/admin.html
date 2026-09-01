@@ -3,28 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración - Marvin Gym</title>
+    <title>Panel Administrativo - Marvin Gym</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #f8fafc; padding: 30px; position: relative; }
-        .brand-logo { position: absolute; top: 20px; right: 30px; font-weight: 800; font-size: 16px; color: #38bdf8; letter-spacing: 2px; opacity: 0.8; text-transform: uppercase; }
-        h1 { color: #38bdf8; font-size: 28px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
-        h2 { color: #cbd5e1; font-size: 18px; margin-top: 30px; margin-bottom: 12px; }
-        .box { background-color: #111827; border: 1px solid #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: inline-block; }
-        .box h3 { color: #38bdf8; font-size: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background-color: #111827; border-radius: 10px; overflow: hidden; border: 1px solid #1e293b; }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #1e293b; font-size: 14px; }
-        th { background-color: #1e293b; color: #94a3b8; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #050505; color: #ffffff; padding: 30px; position: relative; }
+        .brand-logo { position: absolute; top: 20px; right: 30px; font-weight: 800; font-size: 14px; color: #facc15; letter-spacing: 2px; opacity: 0.8; text-transform: lowercase; }
+        h1 { color: #facc15; font-size: 28px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { color: #e4e4e7; font-size: 18px; margin-top: 30px; margin-bottom: 12px; }
+        .box { background-color: #121212; border: 1px solid #facc15; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: inline-block; }
+        .box h3 { color: #facc15; font-size: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background-color: #121212; border-radius: 10px; overflow: hidden; border: 1px solid #27272a; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #27272a; font-size: 14px; }
+        th { background-color: #18181b; color: #facc15; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
         .red { color: #ef4444; font-weight: bold; }
         .yellow { color: #facc15; font-weight: bold; }
-        .green { color: #10b981; font-weight: bold; }
+        .green { color: #22c55e; font-weight: bold; }
         .btn { padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; display: inline-block; text-transform: uppercase; }
-        .btn-green { background-color: #059669; color: #fff; }
-        .btn-green:hover { background-color: #047857; }
+        .btn-green { background-color: #22c55e; color: #000; }
+        .btn-green:hover { background-color: #16a34a; color: #fff; }
         .btn-red { background-color: #dc2626; color: #fff; }
         .btn-red:hover { background-color: #b91c1c; }
-        .btn-ws { background-color: #16a34a; color: #fff; }
-        .btn-ws:hover { background-color: #15803d; }
+        .btn-ws { background-color: #25d366; color: #000; }
+        .btn-ws:hover { background-color: #1da851; color: #fff; }
     </style>
 </head>
 <body>
@@ -57,7 +57,7 @@
                 <td>{{ p.tipo_plan }}</td>
                 <td>${{ p.monto }}</td>
                 <td>{{ p.referencia }}</td>
-                <td><a href="/static/uploads/{{ p.comprobante_path }}" target="_blank" style="color:#38bdf8; font-weight: bold; text-decoration: none;">Ver Capture</a></td>
+                <td><a href="/static/uploads/{{ p.comprobante_path }}" target="_blank" style="color:#facc15; font-weight: bold; text-decoration: none;">Ver Capture</a></td>
                 <td>
                     <a href="/aprobar_pago/{{ p.id }}" class="btn btn-green">Aprobar</a>
                 </td>
@@ -66,7 +66,7 @@
         </tbody>
     </table>
     {% else %}
-    <p style="color: #64748b; font-style: italic;">No hay pagos pendientes por revisar en este momento.</p>
+    <p style="color: #71717a; font-style: italic;">No hay pagos pendientes por revisar en este momento.</p>
     {% endif %}
 
     <h2>Listado de Socios</h2>
