@@ -220,5 +220,25 @@ def aprobar_pago(factura_id):
     conn.close()
     return redirect(url_for('admin'))
 
+
+@app.route('/eliminar_pago/<int:id>')
+def eliminar_pago(id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM facturas WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin'))
+
+@app.route('/admin/socio/<int:id>')
+def admin_socio(id):
+    conn = get_db()
+    cursor = conn.cursor()
+    socio = cursor.execute('SELECT * FROM socios WHERE id = ?', (id,)).fetchone()
+    facturas = cursor.execute('SELECT * FROM facturas WHERE socio_id = ?', (id,)).fetchall()
+    conn.close()
+    return render_template('admin_socio.html', socio=socio, facturas=facturas)
+
 if __name__ == '__main__':
+
     app.run(host='0.0.0.0', port=5000, debug=True)
