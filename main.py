@@ -1,266 +1,349 @@
-import os
 import sqlite3
 from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, session, flash
-from werkzeug.utils import secure_filename
+from functools import wraps
+from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'marvingym_clave_secreta_super_segura'
 
-UPLOAD_FOLDER = 'static/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+# Filtro para formatear números con separadores de miles
+@app.template_filter('format_with_commas')
+def format_with_commas(value):
+    try:
+        return f"{int(value):,}".replace(",", ".")
+    except (ValueError, TypeError):
+        return value
 
-PAGO_MOVIL = {
-    "banco": "Banco Nacional de Crédito (BNC)",
-    "cedula": "13.210.442",
-    "telefono": "04123931166"
-}
-
-def get_db():
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS socios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL,
-            cedula TEXT UNIQUE NOT NULL,
-            telefono TEXT NOT NULL,
-            vencimiento TEXT DEFAULT 'Vencido'
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS facturas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            socio_id INTEGER,
-            tipo_plan TEXT,
-            monto REAL,
-            referencia TEXT,
-            comprobante TEXT,
-            estado TEXT DEFAULT 'Pendiente',
-            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (socio_id) REFERENCES socios (id)
-        )
-    ''')
-    conn.commit()
+def obtener_tasa():
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    c.execute("SELECT valor FROM config WHERE clave = 'tasa_dolar'")
+    resultado = c.fetchone()
     conn.close()
+    return float(resultado[0]) if resultado else 45.0
 
-init_db()
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session or session.get('rol') != 'admin':
+            flash('Acceso denegado. Se requiere ser administrador.', 'danger')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def socio_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session or session.get('rol') != 'socio':
+            flash('Acceso denegado. Se requiere ser socio.', 'danger')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
 
 @app.route('/')
 def index():
-    if 'socio_id' in session:
-        return redirect(url_for('perfil'))
     return redirect(url_for('login'))
-
-@app.route('/registro', methods=['GET', 'POST'])
-def registro():
-    if request.method == 'POST':
-        nombre = request.form['nombre'].strip()
-        cedula = request.form['cedula'].strip()
-        telefono = request.form['telefono'].strip()
-
-        conn = get_db()
-        cursor = conn.cursor()
-        try:
-            cursor.execute('INSERT INTO socios (nombre, cedula, telefono) VALUES (?, ?, ?)',
-                           (nombre, cedula, telefono))
-            conn.commit()
-            socio_id = cursor.lastrowid
-            session['socio_id'] = socio_id
-            session['socio_nombre'] = nombre
-            conn.close()
-            return redirect(url_for('perfil'))
-        except sqlite3.IntegrityError:
-            conn.close()
-            flash('Esta cédula ya está registrada. Intenta iniciar sesión.')
-            return redirect(url_for('login'))
-
-    return render_template('registro.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        cedula = request.form['cedula'].strip()
-        conn = get_db()
-        cursor = conn.cursor()
-        socio = cursor.execute('SELECT * FROM socios WHERE cedula = ?', (cedula,)).fetchone()
+        cedula = request.form.get('cedula')
+        password = request.form.get('password')
+        
+        conn = sqlite3.connect('gym.db')
+        c = conn.cursor()
+        c.execute("SELECT id, nombre, password, cedula, estado FROM usuarios WHERE cedula = ?", (cedula,))
+        usuario = c.fetchone()
         conn.close()
-
-        if socio:
-            session['socio_id'] = socio['id']
-            session['socio_nombre'] = socio['nombre']
-            return redirect(url_for('perfil'))
+        
+        if usuario and check_password_hash(usuario[2], password):
+            if usuario[4] == 'Inactivo':
+                flash('Cuenta inactiva. Contacte al administrador.', 'danger')
+                return render_template('login.html')
+            
+            session['user_id'] = usuario[0]
+            session['nombre'] = usuario[1]
+            
+            if usuario[3] == 'admin123':
+                session['rol'] = 'admin'
+                flash(f'Bienvenido administrador {usuario[1]}', 'success')
+                return redirect(url_for('admin_dashboard'))
+            else:
+                session['rol'] = 'socio'
+                flash(f'Bienvenido {usuario[1]}', 'success')
+                return redirect(url_for('socio_dashboard'))
         else:
-            flash('Cédula no encontrada. Por favor regístrate primero.')
-            return redirect(url_for('registro'))
-
+            flash('Cedula o contraseña incorrecta', 'danger')
+    
     return render_template('login.html')
+
+@app.route('/socio/dashboard')
+@socio_required
+def socio_dashboard():
+    user_id = session.get('user_id')
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    
+    c.execute("SELECT nombre, cedula, telefono, fecha_vencimiento FROM usuarios WHERE id = ?", (user_id,))
+    socio = c.fetchone()
+    
+    tasa = obtener_tasa()
+    
+    if socio:
+        fecha_vencimiento = socio[3]
+        hoy = datetime.now().date()
+        
+        if fecha_vencimiento and fecha_vencimiento != '2000-01-01':
+            fecha_venc = datetime.strptime(fecha_vencimiento, '%Y-%m-%d').date()
+            if fecha_venc >= hoy:
+                dias_restantes = (fecha_venc - hoy).days
+                estado = "Activa"
+            else:
+                dias_restantes = 0
+                estado = "Vencida"
+        else:
+            dias_restantes = 0
+            estado = "Sin membresia"
+        
+        user_data = {
+            'nombre': socio[0],
+            'cedula': socio[1],
+            'telefono': socio[2],
+            'vencimiento': socio[3],
+            'estado': estado,
+            'dias': dias_restantes
+        }
+        
+        c.execute("SELECT fecha_pago, monto, metodo, estado FROM pagos WHERE socio_id = ? ORDER BY fecha_pago DESC LIMIT 5", (user_id,))
+        historial_pagos = c.fetchall()
+    else:
+        user_data = None
+        historial_pagos = []
+    
+    conn.close()
+    return render_template('socio_dashboard.html', user=user_data, pagos=historial_pagos, tasa=tasa)
+
+@app.route('/reportar_pago', methods=['POST'])
+@socio_required
+def reportar_pago():
+    socio_id = session.get('user_id')
+    monto = request.form.get('monto')
+    metodo = request.form.get('metodo')
+    referencia = request.form.get('referencia')
+    
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    
+    c.execute('''
+        INSERT INTO pagos (socio_id, monto, metodo, referencia, estado)
+        VALUES (?, ?, ?, ?, 'Pendiente')
+    ''', (socio_id, monto, metodo, referencia))
+    
+    conn.commit()
+    conn.close()
+    
+    flash('Pago reportado exitosamente. El administrador lo revisara.', 'success')
+    return redirect(url_for('socio_dashboard'))
+
+@app.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    
+    c.execute("SELECT COUNT(*) FROM usuarios WHERE cedula != 'admin123'")
+    total_socios = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM usuarios WHERE fecha_vencimiento > date('now') AND cedula != 'admin123'")
+    activos = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM usuarios WHERE fecha_vencimiento <= date('now') AND fecha_vencimiento != '2000-01-01' AND cedula != 'admin123'")
+    vencidos = c.fetchone()[0]
+    
+    c.execute("SELECT COUNT(*) FROM pagos WHERE estado = 'Pendiente'")
+    pagos_pendientes = c.fetchone()[0]
+    
+    tasa = obtener_tasa()
+    
+    c.execute("""
+        SELECT p.id, u.nombre, p.monto, p.metodo, p.fecha_pago 
+        FROM pagos p 
+        JOIN usuarios u ON p.socio_id = u.id 
+        WHERE p.estado = 'Pendiente' 
+        ORDER BY p.fecha_pago DESC 
+        LIMIT 10
+    """)
+    pagos_pendientes_lista = c.fetchall()
+    
+    c.execute("""
+        SELECT id, nombre, cedula, telefono, fecha_vencimiento 
+        FROM usuarios 
+        WHERE fecha_vencimiento BETWEEN date('now') AND date('now', '+7 days') 
+        AND cedula != 'admin123'
+    """)
+    proximos_vencer = c.fetchall()
+    
+    conn.close()
+    
+    return render_template('admin_dashboard.html', 
+                         total_socios=total_socios,
+                         activos=activos,
+                         vencidos=vencidos,
+                         pagos_pendientes=pagos_pendientes,
+                         pagos_pendientes_lista=pagos_pendientes_lista,
+                         proximos_vencer=proximos_vencer,
+                         tasa=tasa)
+
+@app.route('/admin/pagos')
+@admin_required
+def admin_pagos():
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    
+    busqueda = request.args.get('buscar', '').strip()
+    
+    if busqueda:
+        c.execute("""
+            SELECT p.id, u.nombre, u.cedula, p.monto, p.metodo, p.referencia, p.fecha_pago, p.estado 
+            FROM pagos p 
+            JOIN usuarios u ON p.socio_id = u.id 
+            WHERE p.referencia LIKE ?
+            ORDER BY p.fecha_pago DESC
+        """, (f'%{busqueda}%',))
+    else:
+        c.execute("""
+            SELECT p.id, u.nombre, u.cedula, p.monto, p.metodo, p.referencia, p.fecha_pago, p.estado 
+            FROM pagos p 
+            JOIN usuarios u ON p.socio_id = u.id 
+            ORDER BY p.fecha_pago DESC
+        """)
+    
+    pagos = c.fetchall()
+    conn.close()
+    
+    tasa = obtener_tasa()
+    return render_template('admin_pagos.html', pagos=pagos, tasa=tasa, busqueda=busqueda)
+
+@app.route('/admin/aprobar_pago/<int:pago_id>', methods=['POST'])
+@admin_required
+def aprobar_pago(pago_id):
+    opcion = request.form.get('opcion')
+    
+    opciones = {
+        'dia': 1,
+        'semana': 7,
+        'mes': 30
+    }
+    
+    dias = opciones.get(opcion, 30)
+    
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    
+    c.execute("SELECT socio_id FROM pagos WHERE id = ?", (pago_id,))
+    pago = c.fetchone()
+    
+    if pago:
+        socio_id = pago[0]
+        nueva_fecha = datetime.now().date() + timedelta(days=dias)
+        
+        c.execute("""
+            UPDATE pagos 
+            SET estado = 'Aprobado', fecha_aprobacion = date('now'), admin_id = ? 
+            WHERE id = ?
+        """, (session.get('user_id'), pago_id))
+        
+        c.execute("UPDATE usuarios SET fecha_vencimiento = ? WHERE id = ?", 
+                 (nueva_fecha.strftime('%Y-%m-%d'), socio_id))
+        
+        conn.commit()
+        
+        texto_opcion = {'dia': '1 dia', 'semana': '7 dias', 'mes': '30 dias'}.get(opcion, '30 dias')
+        flash(f'Pago aprobado. Membresia extendida por {texto_opcion}', 'success')
+    else:
+        flash('Pago no encontrado', 'danger')
+    
+    conn.close()
+    return redirect(url_for('admin_pagos'))
+
+@app.route('/admin/rechazar_pago/<int:pago_id>', methods=['POST'])
+@admin_required
+def rechazar_pago(pago_id):
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    
+    c.execute("UPDATE pagos SET estado = 'Rechazado' WHERE id = ?", (pago_id,))
+    conn.commit()
+    conn.close()
+    
+    flash('Pago rechazado', 'warning')
+    return redirect(url_for('admin_pagos'))
+
+@app.route('/admin/usuarios')
+@admin_required
+def admin_usuarios():
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    c.execute("SELECT id, nombre, cedula, telefono, fecha_vencimiento, estado FROM usuarios WHERE cedula != 'admin123' ORDER BY id DESC")
+    usuarios = c.fetchall()
+    conn.close()
+    return render_template('admin_usuarios.html', usuarios=usuarios)
+
+@app.route('/admin/cambiar_estado/<int:user_id>', methods=['POST'])
+@admin_required
+def cambiar_estado(user_id):
+    estado = request.form.get('estado')
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    c.execute("UPDATE usuarios SET estado = ? WHERE id = ?", (estado, user_id))
+    conn.commit()
+    conn.close()
+    flash('Estado del usuario actualizado', 'success')
+    return redirect(url_for('admin_usuarios'))
+
+@app.route('/admin/morosos')
+@admin_required
+def admin_morosos():
+    conn = sqlite3.connect('gym.db')
+    c = conn.cursor()
+    
+    c.execute("""
+        SELECT id, nombre, cedula, telefono, fecha_vencimiento 
+        FROM usuarios 
+        WHERE fecha_vencimiento < date('now') 
+        AND fecha_vencimiento != '2000-01-01'
+        AND cedula != 'admin123'
+        ORDER BY fecha_vencimiento ASC
+    """)
+    morosos = c.fetchall()
+    conn.close()
+    
+    return render_template('admin_morosos.html', morosos=morosos)
+
+@app.route('/admin/config', methods=['GET', 'POST'])
+@admin_required
+def admin_config():
+    if request.method == 'POST':
+        nueva_tasa = request.form.get('tasa_dolar')
+        
+        conn = sqlite3.connect('gym.db')
+        c = conn.cursor()
+        c.execute("UPDATE config SET valor = ? WHERE clave = 'tasa_dolar'", (nueva_tasa,))
+        conn.commit()
+        conn.close()
+        
+        flash(f'Tasa de cambio actualizada a {nueva_tasa} Bs/USD', 'success')
+        return redirect(url_for('admin_config'))
+    
+    tasa = obtener_tasa()
+    return render_template('admin_config.html', tasa=tasa)
 
 @app.route('/logout')
 def logout():
     session.clear()
+    flash('Sesion cerrada correctamente', 'success')
     return redirect(url_for('login'))
 
-@app.route('/perfil')
-def perfil():
-    if 'socio_id' not in session:
-        return redirect(url_for('login'))
-
-    conn = get_db()
-    cursor = conn.cursor()
-    socio = cursor.execute('SELECT * FROM socios WHERE id = ?', (session['socio_id'],)).fetchone()
-    facturas = cursor.execute('SELECT tipo_plan, monto, referencia, estado, fecha FROM facturas WHERE socio_id = ? ORDER BY id DESC', 
-                              (session['socio_id'],)).fetchall()
-    conn.close()
-
-    venc_str = socio['vencimiento']
-    dias_restantes = 0
-    estado_membresia = "VENCIDA"
-
-    if venc_str != 'Vencido':
-        try:
-            venc_dt = datetime.strptime(venc_str, '%Y-%m-%d')
-            dias_restantes = (venc_dt - datetime.now()).days + 1
-            if dias_restantes > 0:
-                estado_membresia = "ACTIVA"
-            else:
-                dias_restantes = 0
-        except ValueError:
-            pass
-
-    user_data = {
-        "nombre": socio['nombre'],
-        "cedula": socio['cedula'],
-        "vencimiento": venc_str,
-        "dias": dias_restantes,
-        "estado": estado_membresia
-    }
-
-    return render_template('perfil.html', user=user_data, pago_movil=PAGO_MOVIL, facturas=facturas)
-
-@app.route('/reportar_pago', methods=['POST'])
-def reportar_pago():
-    if 'socio_id' not in session:
-        return redirect(url_for('login'))
-
-    tipo_plan = request.form['tipo_plan']
-    referencia = request.form['referencia'].strip()
-    file = request.files.get('comprobante')
-
-    monto = 10.0 if tipo_plan == "Mensualidad" else 1.0
-    filename = ""
-
-    if file and file.filename != '':
-        filename = secure_filename(f"{session['socio_id']}_{referencia}_{file.filename}")
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO facturas (socio_id, tipo_plan, monto, referencia, comprobante, estado)
-    VALUES (?, ?, ?, ?, ?, ?)
-    ''', (session['socio_id'], tipo_plan, monto, referencia, filename, 'Pendiente'))
-    conn.commit()
-    conn.close()
-
-    flash('Comprobante enviado exitosamente. Queda en espera de aprobación.')
-    return redirect(url_for('perfil'))
-
-@app.route('/admin')
-def admin():
-    from datetime import datetime
-    conn = get_db()
-    cursor = conn.cursor()
-    pendientes = cursor.execute("""
-        SELECT f.id, s.nombre, s.cedula, f.tipo_plan, f.monto, f.referencia, f.comprobante, f.fecha
-        FROM facturas f
-        JOIN socios s ON f.socio_id = s.id
-        WHERE f.estado = 'Pendiente'
-        ORDER BY f.id DESC
-    """).fetchall()
-    raw_socios = cursor.execute('SELECT * FROM socios ORDER BY id DESC').fetchall()
-    conn.close()
-    socios = []
-    hoy = datetime.now().date()
-    for s in raw_socios:
-        # Convertir sqlite3.Row a diccionario real modificable
-        s_dict = {key: s[key] for key in s.keys()}
-        venc_str = s_dict.get('vencimiento', '')
-        dias = 0
-        alerta = 'al-dia'
-        try:
-            venc_date = datetime.strptime(venc_str, '%Y-%m-%d').date()
-            dias = (venc_date - hoy).days
-            if dias < 0:
-                alerta = 'vencido'
-            elif dias <= 3:
-                alerta = 'por-vencer'
-        except:
-            dias = 0
-        s_dict['fecha_vencimiento'] = venc_str
-        s_dict['dias'] = dias
-        s_dict['alerta'] = alerta
-        socios.append(s_dict)
-    return render_template('admin.html', pendientes=pendientes, socios=socios)
-@app.route('/admin/aprobar/<int:factura_id>')
-def aprobar_pago(factura_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    factura = cursor.execute('SELECT socio_id, tipo_plan FROM facturas WHERE id = ?', (factura_id,)).fetchone()
-
-    if factura:
-        socio_id = factura['socio_id']
-        tipo_plan = factura['tipo_plan']
-        dias_a_sumar = 30 if tipo_plan == "Mensualidad" else 1
-
-        socio = cursor.execute('SELECT vencimiento FROM socios WHERE id = ?', (socio_id,)).fetchone()
-        venc_actual = socio['vencimiento']
-
-        hoy = datetime.now()
-        if venc_actual != 'Vencido':
-            try:
-                dt_venc = datetime.strptime(venc_actual, '%Y-%m-%d')
-                if dt_venc > hoy:
-                    nueva_fecha = dt_venc + timedelta(days=dias_a_sumar)
-                else:
-                    nueva_fecha = hoy + timedelta(days=dias_a_sumar)
-            except ValueError:
-                nueva_fecha = hoy + timedelta(days=dias_a_sumar)
-        else:
-            nueva_fecha = hoy + timedelta(days=dias_a_sumar)
-
-        cursor.execute('UPDATE socios SET vencimiento = ? WHERE id = ?', (nueva_fecha.strftime('%Y-%m-%d'), socio_id))
-        cursor.execute("UPDATE facturas SET estado = 'Aprobado' WHERE id = ?", (factura_id,))
-        conn.commit()
-
-    conn.close()
-    return redirect(url_for('admin'))
-
-
-@app.route('/eliminar_pago/<int:id>')
-def eliminar_pago(id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute('DELETE FROM facturas WHERE id = ?', (id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('admin'))
-
-@app.route('/admin/socio/<int:id>')
-def admin_socio(id):
-    conn = get_db()
-    cursor = conn.cursor()
-    socio = cursor.execute('SELECT * FROM socios WHERE id = ?', (id,)).fetchone()
-    facturas = cursor.execute('SELECT * FROM facturas WHERE socio_id = ?', (id,)).fetchall()
-    conn.close()
-    return render_template('admin_socio.html', socio=socio, facturas=facturas)
-
 if __name__ == '__main__':
-
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True, host='0.0.0.0')

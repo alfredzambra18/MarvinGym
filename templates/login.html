@@ -3,53 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Marvin Gym</title>
+    <title>Marvin Gym - Iniciar Sesion</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: #050505; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .card { background: #121212; border: 1px solid #facc15; border-radius: 12px; padding: 30px; width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(250, 204, 21, 0.15); }
-        h1 { color: #facc15; text-align: center; text-transform: uppercase; font-size: 24px; margin-bottom: 20px; letter-spacing: 1px; }
-        .alert { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; color: #a1a1aa; text-transform: uppercase; margin-bottom: 6px; font-weight: bold; }
-        input { width: 100%; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 6px; color: #fff; font-size: 14px; outline: none; }
-        input:focus { border-color: #facc15; }
-        .btn { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 6px; color: #000; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 14px; margin-top: 10px; }
-        .btn:hover { background: #eab308; }
-        .link { text-align: center; margin-top: 20px; font-size: 13px; color: #a1a1aa; }
-        .link a { color: #facc15; text-decoration: none; font-weight: bold; }
-        .link a:hover { text-decoration: underline; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .login-container {
+            background: #141414;
+            padding: 40px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #2a2a2a;
+        }
+        .login-title {
+            color: #facc15;
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 4px;
+            letter-spacing: 2px;
+        }
+        .login-subtitle {
+            color: #666;
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            color: #aaa;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 15px;
+            transition: border-color 0.3s;
+            outline: none;
+        }
+        input:focus {
+            border-color: #facc15;
+        }
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: #facc15;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        .btn-login:hover {
+            background: #eab308;
+        }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .alert-success {
+            background: #064e3b;
+            color: #6ee7b7;
+            border: 1px solid #065f46;
+        }
+        .alert-danger {
+            background: #7f1d1d;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+        }
+        .alert-warning {
+            background: #78350f;
+            color: #fcd34d;
+            border: 1px solid #92400e;
+        }
+        .footer-text {
+            text-align: center;
+            color: #444;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+        @media (max-width: 480px) {
+            .login-container { padding: 30px 20px; }
+            .login-title { font-size: 24px; }
+        }
     </style>
 </head>
 <body>
-    <div style="position: fixed; top: 10px; right: 15px; font-size: 11px; color: #666; font-family: monospace; z-index: 9999; pointer-events: none;">xp_afx</div>
-    <div class="card">
-        <h1>Marvin Gym</h1>
-        <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-bottom: 20px;">Portal de Socios</p>
+    <div class="login-container">
+        <div class="login-title">MARVIN GYM</div>
+        <div class="login-subtitle">Sistema de Gestion</div>
         
-        {% with messages = get_flashed_messages() %}
-          {% if messages %}
-            {% for message in messages %}
-              <div class="alert">{{ message }}</div>
-            {% endfor %}
-          {% endif %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
         {% endwith %}
-
-        <form action="/login" method="POST">
+        
+        <form method="POST">
             <div class="form-group">
-                <label>Cédula de Identidad</label>
-                <input type="text" name="cedula" placeholder="Ej: 28123456" required>
+                <label for="cedula">Cedula</label>
+                <input type="text" id="cedula" name="cedula" required autofocus>
             </div>
             <div class="form-group">
-                <label>Contraseña</label>
-                <input type="password" name="password" placeholder="••••••••" required>
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required>
             </div>
-            <button type="submit" class="btn">Ingresar al Portal</button>
+            <button type="submit" class="btn-login">Iniciar Sesion</button>
         </form>
-
-        <div class="link">
-            ¿Aún no tienes cuenta? <a href="/registro">Regístrate aquí</a>
-        </div>
+        <div class="footer-text">Sistema de gestion para gimnasios</div>
     </div>
 </body>
 </html>

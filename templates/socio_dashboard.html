@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Marvin Gym</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 20px; max-width: 600px; margin: 0 auto; min-height: 100vh; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #222; margin-bottom: 24px; flex-wrap: wrap; }
+        .header-title { color: #facc15; font-size: 20px; font-weight: 700; }
+        .header-user { color: #888; font-size: 14px; }
+        .btn-logout { background: #1a1a1a; color: #ef4444; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid #2a2a2a; }
+        .btn-logout:hover { background: #2a2a2a; }
+        .card { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card-title { color: #facc15; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1a1a1a; font-size: 14px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #888; }
+        .info-value { color: #fff; font-weight: 500; }
+        .status-box { text-align: center; padding: 16px; border-radius: 8px; margin: 12px 0; font-weight: 600; }
+        .status-Activa { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        .status-Vencida { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        .status-Sin_membresia { background: #78350f; color: #fcd34d; border: 1px solid #92400e; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-Aprobado { background: #065f46; color: #6ee7b7; }
+        .badge-Pendiente { background: #78350f; color: #fcd34d; }
+        .badge-Rechazado { background: #7f1d1d; color: #fca5a5; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; color: #888; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+        input, select { width: 100%; padding: 10px 14px; background: #0a0a0a; border: 1px solid #222; border-radius: 6px; color: #fff; font-size: 14px; outline: none; }
+        input:focus, select:focus { border-color: #facc15; }
+        .btn-primary { width: 100%; padding: 12px; background: #facc15; color: #000; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.3s; text-transform: uppercase; }
+        .btn-primary:hover { background: #eab308; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #1a1a1a; }
+        th { color: #facc15; font-size: 11px; text-transform: uppercase; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; }
+        .alert-success { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        .alert-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        .alert-warning { background: #78350f; color: #fcd34d; border: 1px solid #92400e; }
+        .monto-bs { color: #6ee7b7; font-weight: 600; }
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .header { flex-direction: column; gap: 10px; text-align: center; }
+            .info-row { flex-direction: column; gap: 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <div class="header-title">MARVIN GYM</div>
+            <div class="header-user">Bienvenido, {{ session.nombre }}</div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar Sesion</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if user %}
+    <div class="card">
+        <div class="card-title">Mi Perfil</div>
+        <div class="info-row"><span class="info-label">Nombre</span><span class="info-value">{{ user.nombre }}</span></div>
+        <div class="info-row"><span class="info-label">Cedula</span><span class="info-value">{{ user.cedula }}</span></div>
+        <div class="info-row"><span class="info-label">Telefono</span><span class="info-value">{{ user.telefono }}</span></div>
+        <div class="info-row"><span class="info-label">Vencimiento</span><span class="info-value">{{ user.vencimiento }}</span></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Membresia</div>
+        <div class="status-box status-{{ user.estado.replace(' ', '_') }}">
+            <div style="font-size: 18px;">{{ user.estado }}</div>
+            {% if user.dias > 0 %}
+                <div style="font-size: 14px; margin-top: 4px;">{{ user.dias }} dias restantes</div>
+            {% elif user.estado == 'Vencida' %}
+                <div style="font-size: 14px; margin-top: 4px;">Membresia vencida</div>
+            {% endif %}
+        </div>
+        <div style="margin-top: 8px; text-align: center; color: #888; font-size: 13px;">
+            Precios: Dia $1 (<span class="monto-bs">Bs {{ (1 * tasa)|round(0)|int|format_with_commas }}</span>) | Semana $3 (<span class="monto-bs">Bs {{ (3 * tasa)|round(0)|int|format_with_commas }}</span>) | Mes $10 (<span class="monto-bs">Bs {{ (10 * tasa)|round(0)|int|format_with_commas }}</span>)
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Reportar Pago</div>
+        <form method="POST" action="{{ url_for('reportar_pago') }}">
+            <div class="form-group">
+                <label>Monto (USD)</label>
+                <input type="number" name="monto" step="0.01" required placeholder="10.00">
+            </div>
+            <div class="form-group">
+                <label>Metodo de Pago</label>
+                <select name="metodo" required>
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Pago Movil">Pago Movil</option>
+                    <option value="Transferencia">Transferencia</option>
+                    <option value="Zelle">Zelle</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Referencia (ej: BAN-1234-5678)</label>
+                <input type="text" name="referencia" placeholder="Numero de referencia">
+            </div>
+            <button type="submit" class="btn-primary">Reportar Pago</button>
+        </form>
+    </div>
+
+    {% if pagos %}
+    <div class="card">
+        <div class="card-title">Historial de Pagos</div>
+        <table>
+            <thead><tr><th>Fecha</th><th>Monto</th><th>Metodo</th><th>Estado</th></tr></thead>
+            <tbody>
+                {% for pago in pagos %}
+                <tr>
+                    <td>{{ pago[0] }}</td>
+                    <td>${{ pago[1] }}</td>
+                    <td>{{ pago[2] }}</td>
+                    <td><span class="badge badge-{{ pago[3] }}">{{ pago[3] }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="alert alert-danger">No se encontraron datos del usuario</div>
+    {% endif %}
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socios - Marvin Gym</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 20px; max-width: 900px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #222; margin-bottom: 24px; flex-wrap: wrap; }
+        .header-title { color: #facc15; font-size: 20px; font-weight: 700; }
+        .btn-back { color: #888; text-decoration: none; font-size: 14px; }
+        .btn-back:hover { color: #fff; }
+        .card { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card-title { color: #facc15; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #1a1a1a; }
+        th { color: #facc15; font-size: 11px; text-transform: uppercase; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-Activo { background: #065f46; color: #6ee7b7; }
+        .badge-Inactivo { background: #7f1d1d; color: #fca5a5; }
+        select { background: #0a0a0a; border: 1px solid #222; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        form { display: inline; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; }
+        .alert-success { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .header { flex-direction: column; gap: 10px; text-align: center; }
+            table { font-size: 11px; }
+            th, td { padding: 6px 4px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">Socios</div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Volver</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-title">Lista de Socios</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cedula</th>
+                    <th>Telefono</th>
+                    <th>Vence</th>
+                    <th>Estado</th>
+                    <th>Cambiar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for socio in usuarios %}
+                <tr>
+                    <td>{{ socio[1] }}</td>
+                    <td>{{ socio[2] }}</td>
+                    <td>{{ socio[3] }}</td>
+                    <td>{{ socio[4] }}</td>
+                    <td><span class="badge badge-{{ socio[5] }}">{{ socio[5] }}</span></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('cambiar_estado', user_id=socio[0]) }}">
+                            <select name="estado" onchange="this.form.submit()">
+                                <option value="Activo" {% if socio[5]=='Activo' %}selected{% endif %}>Activo</option>
+                                <option value="Inactivo" {% if socio[5]=='Inactivo' %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

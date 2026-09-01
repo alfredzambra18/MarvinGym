@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+venv/
+*.backup
+*.original
+*.ultimo_backup
