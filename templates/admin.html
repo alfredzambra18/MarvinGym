@@ -2,28 +2,37 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - Marvin Gym</title>
     <style>
-        body { font-family: sans-serif; background: #0f172a; color: #fff; padding: 20px; }
-        h1, h2 { color: #38bdf8; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #1e293b; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
-        th { background: #334155; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0f19; color: #f8fafc; padding: 30px; position: relative; }
+        .brand-logo { position: absolute; top: 20px; right: 30px; font-weight: 800; font-size: 16px; color: #38bdf8; letter-spacing: 2px; opacity: 0.8; text-transform: uppercase; }
+        h1 { color: #38bdf8; font-size: 28px; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        h2 { color: #cbd5e1; font-size: 18px; margin-top: 30px; margin-bottom: 12px; }
+        .box { background-color: #111827; border: 1px solid #1e293b; padding: 20px; border-radius: 12px; margin-bottom: 25px; display: inline-block; }
+        .box h3 { color: #38bdf8; font-size: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background-color: #111827; border-radius: 10px; overflow: hidden; border: 1px solid #1e293b; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #1e293b; font-size: 14px; }
+        th { background-color: #1e293b; color: #94a3b8; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
         .red { color: #ef4444; font-weight: bold; }
         .yellow { color: #facc15; font-weight: bold; }
-        .green { color: #4ade80; font-weight: bold; }
-        .btn { padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: bold; display: inline-block; }
-        .btn-green { background: #22c55e; color: #fff; }
-        .btn-red { background: #ef4444; color: #fff; }
-        .btn-ws { background: #25d366; color: #fff; }
-        .box { background: #1e293b; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #334155; }
+        .green { color: #10b981; font-weight: bold; }
+        .btn { padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; display: inline-block; text-transform: uppercase; }
+        .btn-green { background-color: #059669; color: #fff; }
+        .btn-green:hover { background-color: #047857; }
+        .btn-red { background-color: #dc2626; color: #fff; }
+        .btn-red:hover { background-color: #b91c1c; }
+        .btn-ws { background-color: #16a34a; color: #fff; }
+        .btn-ws:hover { background-color: #15803d; }
     </style>
 </head>
 <body>
-    <h1>Panel de Control - Marvin Gym</h1>
+    <div class="brand-logo">xp_afx</div>
+    <h1>Panel Administrativo - Marvin Gym</h1>
     
     <div class="box">
-        <h3>Balance General: ${{ balance }}</h3>
+        <h3>Balance en Caja: ${{ balance }}</h3>
     </div>
 
     <h2>Pagos por Verificar</h2>
@@ -48,7 +57,7 @@
                 <td>{{ p.tipo_plan }}</td>
                 <td>${{ p.monto }}</td>
                 <td>{{ p.referencia }}</td>
-                <td><a href="/static/uploads/{{ p.comprobante_path }}" target="_blank" style="color:#38bdf8;">Ver Foto</a></td>
+                <td><a href="/static/uploads/{{ p.comprobante_path }}" target="_blank" style="color:#38bdf8; font-weight: bold; text-decoration: none;">Ver Capture</a></td>
                 <td>
                     <a href="/aprobar_pago/{{ p.id }}" class="btn btn-green">Aprobar</a>
                 </td>
@@ -57,10 +66,10 @@
         </tbody>
     </table>
     {% else %}
-    <p>No hay pagos pendientes por verificar.</p>
+    <p style="color: #64748b; font-style: italic;">No hay pagos pendientes por revisar en este momento.</p>
     {% endif %}
 
-    <h2 style="margin-top: 40px;">Listado de Socios</h2>
+    <h2>Listado de Socios</h2>
     <table>
         <thead>
             <tr>
@@ -86,7 +95,7 @@
                 </td>
                 <td>
                     <a href="https://wa.me/{{ m.telefono }}?text=Hola%20{{ m.nombre }},%20te%20recordamos%20que%20tu%20mensualidad%20en%20Marvin%20Gym%20esta%20por%20vencer." target="_blank" class="btn btn-ws">WhatsApp</a>
-                    <a href="/eliminar_miembro/{{ m.id }}" onclick="return confirm('¿Seguro que deseas eliminar este socio?');" class="btn btn-red" style="margin-left: 10px;">Eliminar</a>
+                    <a href="/eliminar_miembro/{{ m.id }}" onclick="return confirm('¿Seguro que deseas eliminar este socio?');" class="btn btn-red" style="margin-left: 8px;">Eliminar</a>
                 </td>
             </tr>
             {% endfor %}
