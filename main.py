@@ -176,17 +176,16 @@ def reportar_pago():
 def admin():
     conn = get_db()
     cursor = conn.cursor()
-    pendientes = cursor.execute('''
+    pendientes = cursor.execute("""
         SELECT f.id, s.nombre, s.cedula, f.tipo_plan, f.monto, f.referencia, f.comprobante, f.fecha
         FROM facturas f
         JOIN socios s ON f.socio_id = s.id
         WHERE f.estado = 'Pendiente'
         ORDER BY f.id DESC
-    ''').fetchall()
+    """).fetchall()
+    socios = cursor.execute("SELECT * FROM socios ORDER BY id DESC").fetchall()
     conn.close()
-    return render_template('admin.html', pendientes=pendientes)
-
-@app.route('/admin/aprobar/<int:factura_id>')
+    return render_template('admin.html', pendientes=pendientes, socios=socios)
 def aprobar_pago(factura_id):
     conn = get_db()
     cursor = conn.cursor()
