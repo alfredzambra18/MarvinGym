@@ -189,7 +189,8 @@ def admin():
     socios = []
     hoy = datetime.now().date()
     for s in raw_socios:
-        s_dict = dict(s)
+        # Convertir sqlite3.Row a diccionario real modificable
+        s_dict = {key: s[key] for key in s.keys()}
         venc_str = s_dict.get('vencimiento', '')
         dias = 0
         alerta = 'al-dia'
