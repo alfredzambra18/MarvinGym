@@ -65,7 +65,7 @@
                     <a href="https://wa.me/{{ p.ws_phone }}?text=Hola%20{{ p.nombre }},%20te%20escribimos%20de%20Marvin%20Gym%20respecto%20a%20tu%20pago%20Ref:%20{{ p.referencia }}" target="_blank" class="btn btn-ws">WhatsApp</a>
                 </td>
                 <td>
-                    <a href="/aprobar_pago/{{ p.id }}" class="btn btn-green">Aprobar</a>
+                    <a href="/admin/aprobar/{{ p.id }}" class="btn btn-green">Aprobar</a>
                     <a href="/eliminar_pago/{{ p.id }}" onclick="return confirm('¿Seguro que deseas rechazar este pago?');" class="btn btn-red">Rechazar</a>
                 </td>
             </tr>
