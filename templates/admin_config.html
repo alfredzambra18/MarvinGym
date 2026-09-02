@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuracion - Marvin Gym</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 20px; max-width: 600px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #222; margin-bottom: 24px; flex-wrap: wrap; }
+        .header-title { color: #facc15; font-size: 20px; font-weight: 700; }
+        .btn-back { color: #888; text-decoration: none; font-size: 14px; }
+        .btn-back:hover { color: #fff; }
+        .card { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card-title { color: #facc15; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; color: #888; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+        input { width: 100%; padding: 10px 14px; background: #0a0a0a; border: 1px solid #222; border-radius: 6px; color: #fff; font-size: 14px; outline: none; }
+        input:focus { border-color: #facc15; }
+        .btn-primary { width: 100%; padding: 12px; background: #facc15; color: #000; border: none; border-radius: 6px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.3s; text-transform: uppercase; }
+        .btn-primary:hover { background: #eab308; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; }
+        .alert-success { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        .info-actual { background: #0a0a0a; padding: 12px 16px; border-radius: 6px; border: 1px solid #1a1a1a; margin-bottom: 16px; }
+        .info-actual span { color: #6ee7b7; font-weight: 700; font-size: 18px; }
+        .precio-actual { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
+        .precio-actual:last-child { border-bottom: none; }
+        .precio-actual .bs { color: #6ee7b7; font-weight: 600; }
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .header { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">Configuracion</div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Volver</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-title">Tasa de Cambio</div>
+        
+        <div class="info-actual">
+            Tasa actual: <span>1 USD = {{ tasa }} Bs</span>
+        </div>
+        
+        <form method="POST">
+            <div class="form-group">
+                <label>Nueva Tasa (Bs/USD)</label>
+                <input type="number" name="tasa_dolar" step="0.01" value="{{ tasa }}" required>
+            </div>
+            <button type="submit" class="btn-primary">Actualizar Tasa</button>
+        </form>
+        
+        <div style="margin-top: 16px; padding: 12px; background: #0a0a0a; border-radius: 6px; border: 1px solid #1a1a1a;">
+            <p style="color: #facc15; font-weight: 600; margin-bottom: 8px;">Precios actuales:</p>
+            <div class="precio-actual">Dia: <span class="bs">Bs {{ (1 * tasa)|round(0)|int|format_with_commas }}</span></div>
+            <div class="precio-actual">Semana: <span class="bs">Bs {{ (3 * tasa)|round(0)|int|format_with_commas }}</span></div>
+            <div class="precio-actual">Mes: <span class="bs">Bs {{ (10 * tasa)|round(0)|int|format_with_commas }}</span></div>
+        </div>
+    </div>
+</body>
+</html>

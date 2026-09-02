@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistencias - MarvinGym</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #050505; color: #fff; padding: 15px; max-width: 700px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        h1 { color: #facc15; font-size: 18px; }
+        .btn-back { color: #a1a1aa; text-decoration: none; font-size: 14px; }
+        .card { background: #121212; border: 1px solid #27272a; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #27272a; }
+        th { color: #facc15; text-transform: uppercase; font-size: 10px; background: #18181b; }
+        .numero { font-size: 24px; font-weight: bold; color: #facc15; }
+        @media (max-width: 400px) {
+            .header { flex-direction: column; align-items: stretch; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📅 Asistencias</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Volver</a>
+    </div>
+
+    <div class="card">
+        <h3 style="color:#facc15; font-size:14px; margin-bottom:10px;">Asistencias de Hoy</h3>
+        {% if asistencias_hoy %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Socio</th>
+                    <th>Hora Entrada</th>
+                    <th>Hora Salida</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for asistencia in asistencias_hoy %}
+                <tr>
+                    <td>{{ asistencia[1] }}</td>
+                    <td>{{ asistencia[2] }}</td>
+                    <td>{{ asistencia[3] or 'Pendiente' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#a1a1aa; text-align:center;">No hay asistencias registradas hoy</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h3 style="color:#facc15; font-size:14px; margin-bottom:10px;">Top Asistencias (Última Semana)</h3>
+        {% if asistencias_semana %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Socio</th>
+                    <th>Asistencias</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in asistencias_semana %}
+                <tr>
+                    <td>{{ item[0] }}</td>
+                    <td><span class="numero">{{ item[1] }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:#a1a1aa; text-align:center;">No hay datos de la semana</p>
+        {% endif %}
+    </div>
+</body>
+</html>

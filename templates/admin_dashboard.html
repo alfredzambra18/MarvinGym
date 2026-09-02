@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrativo - Marvin Gym</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 20px; max-width: 800px; margin: 0 auto; min-height: 100vh; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #222; margin-bottom: 24px; flex-wrap: wrap; }
+        .header-title { color: #facc15; font-size: 20px; font-weight: 700; }
+        .header-user { color: #888; font-size: 14px; }
+        .btn-logout { background: #1a1a1a; color: #ef4444; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid #2a2a2a; }
+        .btn-logout:hover { background: #2a2a2a; }
+        .card { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card-title { color: #facc15; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 4px; }
+        .stat-item { background: #0a0a0a; padding: 16px; border-radius: 8px; text-align: center; border: 1px solid #1a1a1a; }
+        .stat-number { font-size: 28px; font-weight: 700; color: #facc15; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .menu-item { background: #0a0a0a; padding: 16px; border-radius: 8px; text-align: center; text-decoration: none; color: #e5e5e5; border: 1px solid #1a1a1a; transition: background 0.3s, border-color 0.3s; font-size: 13px; font-weight: 500; }
+        .menu-item:hover { background: #1a1a1a; border-color: #facc15; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #1a1a1a; }
+        th { color: #facc15; font-size: 11px; text-transform: uppercase; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; }
+        .alert-success { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        .alert-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-Pendiente { background: #78350f; color: #fcd34d; }
+        .monto-bs { color: #6ee7b7; font-weight: 600; }
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .header { flex-direction: column; gap: 10px; text-align: center; }
+            .stats { grid-template-columns: 1fr 1fr; }
+            .menu-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <div class="header-title">MARVIN GYM</div>
+            <div class="header-user">Administrador: {{ session.nombre }}</div>
+        </div>
+        <a href="{{ url_for('logout') }}" class="btn-logout">Cerrar Sesion</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-title">Resumen</div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-number">{{ total_socios }}</div>
+                <div class="stat-label">Total Socios</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ activos }}</div>
+                <div class="stat-label">Activos</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ vencidos }}</div>
+                <div class="stat-label">Vencidos</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ pagos_pendientes }}</div>
+                <div class="stat-label">Pagos Pendientes</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Acciones</div>
+        <div class="menu-grid">
+            <a href="{{ url_for('admin_pagos') }}" class="menu-item">Pagos</a>
+            <a href="{{ url_for('admin_usuarios') }}" class="menu-item">Socios</a>
+            <a href="{{ url_for('admin_morosos') }}" class="menu-item">Morosos</a>
+            <a href="{{ url_for('admin_config') }}" class="menu-item">Configurar Tasa</a>
+        </div>
+    </div>
+
+    {% if pagos_pendientes_lista %}
+    <div class="card">
+        <div class="card-title">Pagos Pendientes</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Socio</th>
+                    <th>Monto</th>
+                    <th>Metodo</th>
+                    <th>Fecha</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pago in pagos_pendientes_lista %}
+                <tr>
+                    <td>{{ pago[1] }}</td>
+                    <td>${{ pago[2] }}</td>
+                    <td>{{ pago[3] }}</td>
+                    <td>{{ pago[4] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if proximos_vencer %}
+    <div class="card">
+        <div class="card-title">Socios por Vencer (7 dias)</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Cedula</th>
+                    <th>Vence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for socio in proximos_vencer %}
+                <tr>
+                    <td>{{ socio[1] }}</td>
+                    <td>{{ socio[2] }}</td>
+                    <td>{{ socio[4] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</body>
+</html>

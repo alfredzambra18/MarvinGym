@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagos - Marvin Gym</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a0a; color: #e5e5e5; padding: 20px; max-width: 900px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #222; margin-bottom: 24px; flex-wrap: wrap; }
+        .header-title { color: #facc15; font-size: 20px; font-weight: 700; }
+        .btn-back { color: #888; text-decoration: none; font-size: 14px; }
+        .btn-back:hover { color: #fff; }
+        .card { background: #141414; border: 1px solid #222; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .card-title { color: #facc15; font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        .search-box { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+        .search-box input { flex: 1; padding: 10px 14px; background: #0a0a0a; border: 1px solid #222; border-radius: 6px; color: #fff; font-size: 14px; outline: none; min-width: 150px; }
+        .search-box input:focus { border-color: #facc15; }
+        .btn-search { padding: 10px 24px; background: #facc15; color: #000; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 14px; }
+        .btn-search:hover { background: #eab308; }
+        .precios { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .precio-item { background: #0a0a0a; padding: 10px 16px; border-radius: 6px; border: 1px solid #1a1a1a; font-size: 13px; }
+        .precio-item span { color: #facc15; font-weight: 700; }
+        .tasa-info { background: #0a0a0a; padding: 8px 16px; border-radius: 6px; border: 1px solid #1a1a1a; font-size: 13px; display: inline-block; }
+        .tasa-info span { color: #6ee7b7; font-weight: 700; }
+        .monto-bs { color: #6ee7b7; font-weight: 600; }
+        .ref-destacada { color: #facc15; font-weight: 700; background: #1a1a1a; padding: 2px 8px; border-radius: 4px; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #1a1a1a; }
+        th { color: #facc15; font-size: 11px; text-transform: uppercase; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .badge-Pendiente { background: #78350f; color: #fcd34d; }
+        .badge-Aprobado { background: #065f46; color: #6ee7b7; }
+        .badge-Rechazado { background: #7f1d1d; color: #fca5a5; }
+        .btn { padding: 4px 10px; border: none; border-radius: 4px; font-weight: 600; font-size: 11px; cursor: pointer; }
+        .btn-success { background: #22c55e; color: #000; }
+        .btn-danger { background: #ef4444; color: #fff; }
+        .btn-success:hover { background: #16a34a; }
+        .btn-danger:hover { background: #dc2626; }
+        form { display: inline; }
+        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; text-align: center; }
+        .alert-success { background: #064e3b; color: #6ee7b7; border: 1px solid #065f46; }
+        .alert-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
+        select { background: #0a0a0a; border: 1px solid #222; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .resultado-busqueda { margin-top: 8px; padding: 8px 12px; background: #1a1a1a; border-radius: 6px; font-size: 13px; color: #888; }
+        .resultado-busqueda strong { color: #facc15; }
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .header { flex-direction: column; gap: 10px; text-align: center; }
+            table { font-size: 11px; }
+            th, td { padding: 6px 4px; }
+            .search-box { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-title">Pagos</div>
+        <div>
+            <a href="{{ url_for('admin_config') }}" style="color: #6ee7b7; text-decoration: none; margin-right: 16px; font-size: 14px;">Configurar Tasa</a>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Volver</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-title">Buscar por Referencia</div>
+        <div class="search-box">
+            <form method="GET" action="{{ url_for('admin_pagos') }}" style="display: flex; flex: 1; gap: 12px; flex-wrap: wrap; width: 100%;">
+                <input type="text" name="buscar" placeholder="Ej: 1234 (ultimos 4 digitos)" value="{{ busqueda if busqueda else '' }}">
+                <button type="submit" class="btn-search">Buscar</button>
+                {% if busqueda %}
+                    <a href="{{ url_for('admin_pagos') }}" style="color: #ef4444; text-decoration: none; font-weight: 600; padding: 10px 16px; background: #1a1a1a; border-radius: 6px; border: 1px solid #2a2a2a;">Limpiar</a>
+                {% endif %}
+            </form>
+        </div>
+        {% if busqueda %}
+            <div class="resultado-busqueda">Resultados para: <strong>"{{ busqueda }}"</strong> (ultimos 4 digitos)</div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="card-title">Precios</div>
+        <div class="precios">
+            <div class="precio-item">Dia: <span>$1</span> | <span class="monto-bs">Bs {{ (1 * tasa)|round(0)|int|format_with_commas }}</span></div>
+            <div class="precio-item">Semana: <span>$3</span> | <span class="monto-bs">Bs {{ (3 * tasa)|round(0)|int|format_with_commas }}</span></div>
+            <div class="precio-item">Mes: <span>$10</span> | <span class="monto-bs">Bs {{ (10 * tasa)|round(0)|int|format_with_commas }}</span></div>
+        </div>
+        <div class="tasa-info">Tasa de cambio: <span>1 USD = {{ tasa }} Bs</span></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Todos los Pagos</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Socio</th>
+                    <th>Monto</th>
+                    <th>Monto Bs</th>
+                    <th>Referencia</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Accion</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if pagos %}
+                    {% for pago in pagos %}
+                    <tr>
+                        <td>{{ pago[1] }}</td>
+                        <td>${{ pago[3] }}</td>
+                        <td class="monto-bs">Bs {{ (pago[3] * tasa)|round(0)|int|format_with_commas }}</td>
+                        <td><span class="ref-destacada">{{ pago[5][-4:] if pago[5] else 'Sin ref' }}</span></td>
+                        <td>{{ pago[6] }}</td>
+                        <td><span class="badge badge-{{ pago[7] }}">{{ pago[7] }}</span></td>
+                        <td>
+                            {% if pago[7] == 'Pendiente' %}
+                            <form method="POST" action="{{ url_for('aprobar_pago', pago_id=pago[0]) }}" style="display:inline;">
+                                <select name="opcion" required>
+                                    <option value="dia">Dia ($1 | Bs {{ (1 * tasa)|round(0)|int|format_with_commas }})</option>
+                                    <option value="semana">Semana ($3 | Bs {{ (3 * tasa)|round(0)|int|format_with_commas }})</option>
+                                    <option value="mes" selected>Mes ($10 | Bs {{ (10 * tasa)|round(0)|int|format_with_commas }})</option>
+                                </select>
+                                <button type="submit" class="btn btn-success">Aprobar</button>
+                            </form>
+                            <form method="POST" action="{{ url_for('rechazar_pago', pago_id=pago[0]) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-danger">Rechazar</button>
+                            </form>
+                            {% else %}
+                            <span style="color:#666; font-size:11px;">{{ pago[7] }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr><td colspan="7" style="text-align:center;color:#555;padding:20px;">No hay pagos registrados</td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
