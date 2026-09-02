@@ -4,22 +4,22 @@ import urllib.parse
 import re
 import uuid
 from datetime import datetime, timedelta
-from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response, g
+from flask import Flask, render_template, request, redirect, url_for, session, flash, make_response, abort
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 import logging
 
 app = Flask(__name__)
 
-# Configuración básica
+# Configuración desde variables de entorno
 app.secret_key = os.environ.get('SECRET_KEY', 'clave_temporal_insegura_123')
 app.config['UPLOAD_FOLDER'] = os.environ.get('UPLOAD_FOLDER', 'static/uploads')
-app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2 MB
+app.config['MAX_CONTENT_LENGTH'] = 2 * 1024 * 1024  # 2 MB máximo
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)
 
-# Configurar logging
+# Logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -35,22 +35,15 @@ PAGO_MOVIL = {
 }
 ADMIN_WHATSAPP = os.environ.get('ADMIN_WHATSAPP', "584123931166")
 
-# Determinar base de datos
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL and DATABASE_URL.startswith('postgres'):
-    # Si se usa PostgreSQL, se debe instalar psycopg2 y usar URI
-    import psycopg2
-    def get_db():
-        conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-        return conn
-    DB_TYPE = 'postgres'
-else:
-    DB_TYPE = 'sqlite'
-    SQLITE_DB = os.environ.get('SQLITE_DB', 'database.db')
-    def get_db():
-        conn = sqlite3.connect(SQLITE_DB)
-        conn.row_factory = sqlite3.Row
-        return conn
+# Base de datos SQLite (con soporte para disco persistente)
+SQLITE_DB = os.environ.get('SQLITE_DB', 'database.db')
+
+def get_db():
+    conn = sqlite3.connect(SQLITE_DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+DB_TYPE = 'sqlite'
 
 # ---------- Helpers de CSRF ----------
 def generate_csrf_token():
@@ -67,8 +60,6 @@ def validate_csrf():
 app.jinja_env.globals['csrf_token'] = generate_csrf_token
 
 # ---------- Manejo de errores ----------
-from flask import abort
-
 @app.errorhandler(404)
 def not_found(e):
     return render_template('error.html', code=404, mensaje="Página no encontrada"), 404
@@ -85,92 +76,53 @@ def too_large(e):
 
 # ---------- Inicialización de la base de datos ----------
 def init_db():
-    if DB_TYPE == 'sqlite':
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS socios (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nombre TEXT NOT NULL,
-                    cedula TEXT UNIQUE NOT NULL,
-                    telefono TEXT NOT NULL,
-                    email TEXT,
-                    fecha_nacimiento TEXT,
-                    password_hash TEXT NOT NULL DEFAULT 'temporal',
-                    vencimiento TEXT DEFAULT 'Vencido'
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS planes (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nombre TEXT NOT NULL,
-                    duracion_dias INTEGER NOT NULL,
-                    precio REAL NOT NULL,
-                    activo INTEGER DEFAULT 1
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS facturas (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    socio_id INTEGER,
-                    tipo_plan TEXT,
-                    monto REAL,
-                    referencia TEXT,
-                    comprobante TEXT,
-                    estado TEXT DEFAULT 'Pendiente',
-                    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (socio_id) REFERENCES socios (id)
-                )
-            ''')
-            cursor.execute('SELECT COUNT(*) FROM planes')
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO planes (nombre, duracion_dias, precio) VALUES ('Pase Diario', 1, 1.0)")
-                cursor.execute("INSERT INTO planes (nombre, duracion_dias, precio) VALUES ('Mensualidad', 30, 10.0)")
-            conn.commit()
-    else:
-        # Para PostgreSQL (si se decide migrar)
-        with get_db() as conn:
-            cursor = conn.cursor()
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS socios (
-                    id SERIAL PRIMARY KEY,
-                    nombre TEXT NOT NULL,
-                    cedula TEXT UNIQUE NOT NULL,
-                    telefono TEXT NOT NULL,
-                    email TEXT,
-                    fecha_nacimiento TEXT,
-                    password_hash TEXT NOT NULL DEFAULT 'temporal',
-                    vencimiento TEXT DEFAULT 'Vencido'
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS planes (
-                    id SERIAL PRIMARY KEY,
-                    nombre TEXT NOT NULL,
-                    duracion_dias INTEGER NOT NULL,
-                    precio REAL NOT NULL,
-                    activo INTEGER DEFAULT 1
-                )
-            ''')
-            cursor.execute('''
-                CREATE TABLE IF NOT EXISTS facturas (
-                    id SERIAL PRIMARY KEY,
-                    socio_id INTEGER REFERENCES socios(id),
-                    tipo_plan TEXT,
-                    monto REAL,
-                    referencia TEXT,
-                    comprobante TEXT,
-                    estado TEXT DEFAULT 'Pendiente',
-                    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            ''')
-            cursor.execute('SELECT COUNT(*) FROM planes')
-            if cursor.fetchone()[0] == 0:
-                cursor.execute("INSERT INTO planes (nombre, duracion_dias, precio) VALUES ('Pase Diario', 1, 1.0)")
-                cursor.execute("INSERT INTO planes (nombre, duracion_dias, precio) VALUES ('Mensualidad', 30, 10.0)")
-            conn.commit()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS socios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            cedula TEXT UNIQUE NOT NULL,
+            telefono TEXT NOT NULL,
+            email TEXT,
+            fecha_nacimiento TEXT,
+            password_hash TEXT NOT NULL DEFAULT 'temporal',
+            vencimiento TEXT DEFAULT 'Vencido'
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS planes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            duracion_dias INTEGER NOT NULL,
+            precio REAL NOT NULL,
+            activo INTEGER DEFAULT 1
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS facturas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            socio_id INTEGER,
+            tipo_plan TEXT,
+            monto REAL,
+            referencia TEXT,
+            comprobante TEXT,
+            estado TEXT DEFAULT 'Pendiente',
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (socio_id) REFERENCES socios (id)
+        )
+    ''')
+    cursor.execute('SELECT COUNT(*) FROM planes')
+    if cursor.fetchone()[0] == 0:
+        cursor.execute("INSERT INTO planes (nombre, duracion_dias, precio) VALUES ('Pase Diario', 1, 1.0)")
+        cursor.execute("INSERT INTO planes (nombre, duracion_dias, precio) VALUES ('Mensualidad', 30, 10.0)")
+    conn.commit()
+    conn.close()
 
-init_db()
+try:
+    init_db()
+except Exception as e:
+    logger.critical(f"Error al inicializar la base de datos: {e}")
 
 # ---------- Validaciones ----------
 def validar_cedula(cedula):
@@ -202,7 +154,6 @@ def registro():
         fecha_nacimiento = request.form.get('fecha_nacimiento', '').strip()
         password = request.form.get('password', '').strip()
 
-        # Validaciones
         if not nombre or len(nombre) > 100:
             flash('Nombre inválido.')
         elif not validar_cedula(cedula):
@@ -228,6 +179,9 @@ def registro():
                 session['socio_id'] = socio_id
                 session['socio_nombre'] = nombre
                 return redirect(url_for('perfil'))
+            except sqlite3.IntegrityError:
+                flash('Esta cédula ya está registrada. Intenta iniciar sesión.')
+                return redirect(url_for('login'))
             except Exception as e:
                 logger.error(f"Error en registro: {e}")
                 flash('Error al registrar. Verifica los datos.')
@@ -250,16 +204,60 @@ def login():
         socio = cursor.execute('SELECT * FROM socios WHERE cedula = ? OR nombre = ? OR telefono = ?', (usuario, usuario, usuario)).fetchone()
         conn.close()
 
-        if socio and check_password_hash(socio['password_hash'], password):
-            session.permanent = True
-            session['socio_id'] = socio['id']
-            session['socio_nombre'] = socio['nombre']
-            return redirect(url_for('perfil'))
+        if socio:
+            try:
+                if check_password_hash(socio['password_hash'], password):
+                    session.permanent = True
+                    session['socio_id'] = socio['id']
+                    session['socio_nombre'] = socio['nombre']
+                    return redirect(url_for('perfil'))
+                else:
+                    flash('Usuario o contraseña incorrectos.')
+                    return redirect(url_for('login'))
+            except ValueError:
+                logger.error("Hash de contraseña inválido para socio ID %s", socio['id'])
+                flash('Error en la contraseña almacenada. Contacta al administrador.')
+                return redirect(url_for('login'))
         else:
             flash('Usuario o contraseña incorrectos.')
             return redirect(url_for('login'))
 
     return render_template('login.html')
+
+@app.route('/recuperar', methods=['GET', 'POST'])
+def recuperar():
+    if request.method == 'POST':
+        validate_csrf()
+        cedula = request.form['cedula'].strip().upper()
+        telefono = request.form['telefono'].strip()
+        nueva_password = request.form['nueva_password'].strip()
+
+        if not validar_cedula(cedula):
+            flash('Cédula inválida.')
+            return redirect(url_for('recuperar'))
+        if not validar_telefono(telefono):
+            flash('Teléfono inválido.')
+            return redirect(url_for('recuperar'))
+        if len(nueva_password) < 6:
+            flash('La nueva contraseña debe tener al menos 6 caracteres.')
+            return redirect(url_for('recuperar'))
+
+        conn = get_db()
+        cursor = conn.cursor()
+        socio = cursor.execute('SELECT * FROM socios WHERE cedula = ? AND telefono = ?', (cedula, telefono)).fetchone()
+        if not socio:
+            flash('No se encontró un socio con esa cédula y teléfono.')
+            conn.close()
+            return redirect(url_for('recuperar'))
+
+        hashed = generate_password_hash(nueva_password)
+        cursor.execute('UPDATE socios SET password_hash = ? WHERE id = ?', (hashed, socio['id']))
+        conn.commit()
+        conn.close()
+        flash('Contraseña actualizada correctamente. Ya puedes iniciar sesión.')
+        return redirect(url_for('login'))
+
+    return render_template('recuperar.html')
 
 @app.route('/logout')
 def logout():
@@ -376,7 +374,6 @@ def admin():
     conn = get_db()
     cursor = conn.cursor()
     
-    # Pagos pendientes con teléfono del socio
     pendientes = cursor.execute("""
         SELECT f.id, s.nombre, s.cedula, s.telefono, f.tipo_plan, f.monto, f.referencia, f.comprobante, f.fecha
         FROM facturas f
@@ -422,7 +419,7 @@ def admin():
         s_dict['fecha_vencimiento'] = venc_str
         s_dict['dias'] = dias
         s_dict['alerta'] = alerta
-        s_dict['telefono'] = s_dict['telefono']  # aseguramos que exista
+        s_dict['telefono'] = s_dict['telefono']
         socios.append(s_dict)
 
     resumen = {
@@ -438,20 +435,26 @@ def admin():
 def detalle_socio(socio_id):
     if not session.get('es_admin'):
         return redirect(url_for('admin'))
-    conn = get_db()
-    cursor = conn.cursor()
-    socio = cursor.execute('SELECT * FROM socios WHERE id = ?', (socio_id,)).fetchone()
-    if not socio:
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        socio = cursor.execute('SELECT * FROM socios WHERE id = ?', (socio_id,)).fetchone()
+        if not socio:
+            flash('Socio no encontrado.')
+            conn.close()
+            return redirect(url_for('admin'))
+        pagos = cursor.execute('''
+            SELECT tipo_plan, monto, referencia, comprobante, estado, fecha 
+            FROM facturas 
+            WHERE socio_id = ? 
+            ORDER BY id DESC
+        ''', (socio_id,)).fetchall()
         conn.close()
+        return render_template('detalle_socio.html', socio=socio, pagos=pagos)
+    except Exception as e:
+        logger.error(f"Error en detalle_socio: {e}")
+        flash('Ocurrió un error al cargar el socio.')
         return redirect(url_for('admin'))
-    pagos = cursor.execute('''
-        SELECT tipo_plan, monto, referencia, comprobante, estado, fecha 
-        FROM facturas 
-        WHERE socio_id = ? 
-        ORDER BY id DESC
-    ''', (socio_id,)).fetchall()
-    conn.close()
-    return render_template('detalle_socio.html', socio=socio, pagos=pagos)
 
 @app.route('/admin/logout')
 def admin_logout():
@@ -564,6 +567,20 @@ def aprobar_pago(factura_id):
     conn.close()
     return redirect(url_for('admin'))
 
+@app.route('/admin/eliminar_socio/<int:socio_id>', methods=['POST'])
+def eliminar_socio(socio_id):
+    if not session.get('es_admin'):
+        return redirect(url_for('admin'))
+    validate_csrf()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM facturas WHERE socio_id = ?', (socio_id,))
+    cursor.execute('DELETE FROM socios WHERE id = ?', (socio_id,))
+    conn.commit()
+    conn.close()
+    flash('Socio eliminado correctamente.')
+    return redirect(url_for('admin'))
+
 @app.route('/eliminar_pago/<int:id>')
 def eliminar_pago(id):
     if not session.get('es_admin'):
@@ -575,58 +592,6 @@ def eliminar_pago(id):
     conn.commit()
     conn.close()
     return redirect(url_for('admin'))
-
-
-@app.route('/admin/eliminar_socio/<int:socio_id>', methods=['POST'])
-def eliminar_socio(socio_id):
-    if not session.get('es_admin'):
-        return redirect(url_for('admin'))
-    validate_csrf()
-    conn = get_db()
-    cursor = conn.cursor()
-    # Eliminar facturas asociadas y luego el socio
-    cursor.execute('DELETE FROM facturas WHERE socio_id = ?', (socio_id,))
-    cursor.execute('DELETE FROM socios WHERE id = ?', (socio_id,))
-    conn.commit()
-    conn.close()
-    flash('Socio eliminado correctamente.')
-    return redirect(url_for('admin'))
-
-
-@app.route('/recuperar', methods=['GET', 'POST'])
-def recuperar():
-    if request.method == 'POST':
-        validate_csrf()
-        cedula = request.form['cedula'].strip().upper()
-        telefono = request.form['telefono'].strip()
-        nueva_password = request.form['nueva_password'].strip()
-
-        if not validar_cedula(cedula):
-            flash('Cédula inválida.')
-            return redirect(url_for('recuperar'))
-        if not validar_telefono(telefono):
-            flash('Teléfono inválido.')
-            return redirect(url_for('recuperar'))
-        if len(nueva_password) < 6:
-            flash('La nueva contraseña debe tener al menos 6 caracteres.')
-            return redirect(url_for('recuperar'))
-
-        conn = get_db()
-        cursor = conn.cursor()
-        socio = cursor.execute('SELECT * FROM socios WHERE cedula = ? AND telefono = ?', (cedula, telefono)).fetchone()
-        if not socio:
-            flash('No se encontró un socio con esa cédula y teléfono.')
-            conn.close()
-            return redirect(url_for('recuperar'))
-
-        hashed = generate_password_hash(nueva_password)
-        cursor.execute('UPDATE socios SET password_hash = ? WHERE id = ?', (hashed, socio['id']))
-        conn.commit()
-        conn.close()
-        flash('Contraseña actualizada correctamente. Ya puedes iniciar sesión.')
-        return redirect(url_for('login'))
-
-    return render_template('recuperar.html')
 
 if __name__ == '__main__':
     debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
