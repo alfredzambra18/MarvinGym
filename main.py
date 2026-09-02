@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
-app.secret_key = 'marvingym_clave_secreta_super_segura'
+app.secret_key = os.environ.get('SECRET_KEY', 'marvingym_clave_secreta_local')
 
 # Filtro para formatear números con separadores de miles
 @app.template_filter("format_with_commas")
@@ -18,7 +18,10 @@ def format_with_commas(value):
 
 
 # ⚠️ CAMBIA ESTO: Reemplaza 'TU_URL_DE_RENDER_AQUI' por la URL de tu base de datos de Render
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'postgresql://marvingym:dTbJv0KvbhOcaW7SR6LuCvLoLbIRP55U@dpg-dabk5vp42hec73a9j4c0-a.oregon-postgres.render.com/marvingym')
+db_url = os.environ.get('DATABASE_URL', 'sqlite:///gym.db')
+if db_url and db_url.startswith('postgres://'):
+    db_url = db_url.replace('postgres://', 'postgresql://', 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
