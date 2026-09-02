@@ -20,7 +20,7 @@
         .btn { padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; display: inline-block; text-transform: uppercase; }
         .btn-green { background-color: #22c55e; color: #000; }
         .btn-green:hover { background-color: #16a34a; color: #fff; }
-        .btn-red { background-color: #dc2626; color: #fff; }
+        .btn-red { background-color: #dc2626; color: #fff; border: none; cursor: pointer; }
         .btn-red:hover { background-color: #b91c1c; }
         .btn-ws { background-color: #25D366; color: #000; font-weight: bold; }
         .btn-ws:hover { background-color: #1ebc57; }
@@ -28,6 +28,9 @@
         .btn-info:hover { background-color: #2563eb; }
         a.socio-link { color: #facc15; font-weight: bold; text-decoration: none; }
         a.socio-link:hover { text-decoration: underline; }
+        .footer { text-align: center; margin-top: 30px; font-size: 11px; color: #666; }
+        .btn-eliminar { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-eliminar:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -35,7 +38,8 @@
     <h1>Panel Administrativo - Marvin Gym</h1>
     
     <div class="box">
-        <h3>Balance en Caja: ${{ balance }}</h3>
+        <h3>Balance en Caja: ${{ resumen.ingresos }}</h3>
+        <p>Activos: {{ resumen.activos }} | Deudores: {{ resumen.deudores }} | Por cobrar: ${{ resumen.por_cobrar }}</p>
     </div>
 
     <h2>Pagos por Verificar</h2>
@@ -61,7 +65,7 @@
                 <td>${{ p.monto }}</td>
                 <td>{{ p.referencia }}</td>
                 <td>
-                    <a href="https://wa.me/{{ p.ws_phone }}?text=Hola%20{{ p.nombre }},%20te%20escribimos%20de%20Marvin%20Gym%20respecto%20a%20tu%20pago%20Ref:%20{{ p.referencia }}" target="_blank" class="btn btn-ws">WhatsApp</a>
+                    <a href="https://wa.me/{{ p.telefono }}?text=Hola%20{{ p.nombre }},%20te%20escribimos%20de%20Marvin%20Gym%20respecto%20a%20tu%20pago%20Ref:%20{{ p.referencia }}" target="_blank" class="btn btn-ws">WhatsApp</a>
                 </td>
                 <td>
                     <a href="/admin/aprobar/{{ p.id }}" class="btn btn-green">Aprobar</a>
@@ -100,12 +104,20 @@
                     {% else %} Al día {% endif %}
                 </td>
                 <td>
-                    <a href="https://wa.me/{{ s.ws_phone }}?text=Hola%20{{ s.nombre }},%20te%20escribimos%20de%20Marvin%20Gym" target="_blank" class="btn btn-ws">WhatsApp</a>
+                    <a href="https://wa.me/{{ s.telefono }}?text=Hola%20{{ s.nombre }},%20te%20escribimos%20de%20Marvin%20Gym" target="_blank" class="btn btn-ws">WhatsApp</a>
                     <a href="/admin/socio/{{ s.id }}" class="btn btn-info" style="margin-left: 4px;">Ver Pagos</a>
+                    <form action="/admin/eliminar_socio/{{ s.id }}" method="POST" style="display:inline; margin-left:4px;" onsubmit="return confirm('¿Seguro que deseas eliminar a este socio?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-eliminar">Eliminar</button>
+                    </form>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+    <div class="footer">
+        © 2025 Marvin Gym · Panel Administrativo · <b style="color:#facc15;">xp_afx</b>
+    </div>
 </body>
 </html>

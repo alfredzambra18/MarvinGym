@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - Marvin Gym</title>
+    <style>
+        body { background: #050505; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        .card { background: #121212; border: 1px solid #facc15; padding: 30px; border-radius: 12px; width: 300px; text-align: center; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; background: #18181b; border: 1px solid #27272a; color: #fff; border-radius: 6px; }
+        button { width: 100%; padding: 10px; background: #facc15; border: none; color: #000; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .alert { color: #ef4444; margin-bottom: 10px; }
+        .footer { margin-top: 20px; font-size: 11px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="color: #facc15; margin-bottom: 20px;">Admin</h2>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <form action="/admin" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="password" name="clave_admin" placeholder="Contraseña" required>
+            <button type="submit">Ingresar</button>
+        </form>
+        <div class="footer">
+            © 2025 Marvin Gym · <b style="color:#facc15;">xp_afx</b>
+        </div>
+    </div>
+</body>
+</html>

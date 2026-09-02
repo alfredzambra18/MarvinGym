@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperar Contraseña - Marvin Gym</title>
+    <style>
+        body { background: #050505; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        .card { background: #121212; border: 1px solid #facc15; padding: 30px; border-radius: 12px; width: 350px; }
+        h1 { color: #facc15; text-align: center; font-size: 22px; margin-bottom: 20px; }
+        label { display: block; font-size: 12px; color: #a1a1aa; text-transform: uppercase; margin-bottom: 5px; }
+        input { width: 100%; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 6px; color: #fff; margin-bottom: 15px; }
+        .btn { width: 100%; padding: 12px; background: #facc15; border: none; color: #000; font-weight: bold; text-transform: uppercase; cursor: pointer; }
+        .alert { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; }
+        .link { text-align: center; margin-top: 15px; font-size: 13px; }
+        .link a { color: #facc15; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Recuperar Contraseña</h1>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <form action="/recuperar" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label>Cédula</label>
+            <input type="text" name="cedula" placeholder="Ej: 28123456" required>
+            <label>Teléfono registrado</label>
+            <input type="text" name="telefono" placeholder="Ej: 04141234567" required>
+            <label>Nueva contraseña</label>
+            <input type="password" name="nueva_password" placeholder="Mínimo 6 caracteres" required>
+            <button type="submit" class="btn">Actualizar</button>
+        </form>
+        <div class="link">
+            <a href="/login">← Volver al inicio de sesión</a>
+        </div>
+    </div>
+</body>
+</html>

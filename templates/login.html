@@ -3,53 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Marvin Gym</title>
+    <title>Iniciar Sesión | MarvinGym</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', sans-serif; background: #050505; color: #fff; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
-        .card { background: #121212; border: 1px solid #facc15; border-radius: 12px; padding: 30px; width: 100%; max-width: 400px; box-shadow: 0 4px 20px rgba(250, 204, 21, 0.15); }
-        h1 { color: #facc15; text-align: center; text-transform: uppercase; font-size: 24px; margin-bottom: 20px; letter-spacing: 1px; }
-        .alert { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; color: #a1a1aa; text-transform: uppercase; margin-bottom: 6px; font-weight: bold; }
-        input { width: 100%; padding: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 6px; color: #fff; font-size: 14px; outline: none; }
-        input:focus { border-color: #facc15; }
-        .btn { width: 100%; padding: 12px; background: #facc15; border: none; border-radius: 6px; color: #000; font-weight: bold; text-transform: uppercase; cursor: pointer; font-size: 14px; margin-top: 10px; }
-        .btn:hover { background: #eab308; }
-        .link { text-align: center; margin-top: 20px; font-size: 13px; color: #a1a1aa; }
-        .link a { color: #facc15; text-decoration: none; font-weight: bold; }
-        .link a:hover { text-decoration: underline; }
+        body {
+            background-color: #0d0d0d;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        .login-card {
+            background: #181818;
+            border: 2px solid #ffed00;
+            border-radius: 16px;
+            box-shadow: 0 0 25px rgba(255, 237, 0, 0.25);
+        }
+        .brand-title {
+            color: #ffffff;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+        }
+        .brand-yellow {
+            color: #ffed00;
+        }
+        .btn-yellow {
+            background-color: #ffed00;
+            color: #0d0d0d;
+            font-weight: 800;
+            border: none;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-yellow:hover {
+            background-color: #e6d500;
+            color: #0d0d0d;
+            box-shadow: 0 0 12px rgba(255, 237, 0, 0.4);
+        }
     </style>
 </head>
-<body>
-    <div style="position: fixed; top: 10px; right: 15px; font-size: 11px; color: #666; font-family: monospace; z-index: 9999; pointer-events: none;">xp_afx</div>
-    <div class="card">
-        <h1>Marvin Gym</h1>
-        <p style="text-align: center; color: #a1a1aa; font-size: 13px; margin-bottom: 20px;">Portal de Socios</p>
+<body class="d-flex align-items-center justify-content-center p-3">
+    <div class="card login-card p-4" style="max-width: 400px; width: 100%;">
+        <div class="text-center mb-4">
+            <span class="badge bg-dark text-warning border border-warning mb-2">xp_afx edition</span>
+            <h2 class="brand-title m-0">MARVIN <span class="brand-yellow">GYM</span></h2>
+            <small class="text-secondary">Portal de Miembros</small>
+        </div>
         
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             {% for message in messages %}
-              <div class="alert">{{ message }}</div>
+              <div class="alert alert-warning alert-dismissible fade show bg-dark text-warning border-warning" role="alert">
+                {{ message }}
+              </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
         <form action="/login" method="POST">
-            <div class="form-group">
-                <label>Cédula de Identidad</label>
-                <input type="text" name="cedula" placeholder="Ej: 28123456" required>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-3">
+                <label for="usuario" class="form-label text-light">Usuario (cédula, teléfono o nombre)</label>
+                <input type="text" id="usuario" name="usuario" class="form-control bg-dark text-white border-secondary" placeholder="Ej: 28123456 / 04141234567 / Alfredo" required>
             </div>
-            <div class="form-group">
-                <label>Contraseña</label>
-                <input type="password" name="password" placeholder="••••••••" required>
+            <div class="mb-3">
+                <label for="password" class="form-label text-light">Contraseña</label>
+                <div class="input-group">
+                    <input type="password" id="password" name="password" class="form-control bg-dark text-white border-secondary" placeholder="Ingresa tu clave" required>
+                    <button class="btn btn-outline-warning" type="button" onclick="togglePass()">👁️</button>
+                </div>
             </div>
-            <button type="submit" class="btn">Ingresar al Portal</button>
+            <button type="submit" class="btn btn-yellow w-100 py-2 mb-3">INGRESAR</button>
         </form>
 
-        <div class="link">
-            ¿Aún no tienes cuenta? <a href="/registro">Regístrate aquí</a>
+        <div class="text-center mt-3 pt-3 border-top border-secondary">
+            <p class="mb-1 text-secondary">¿Eres nuevo socio?</p>
+            <a href="/registro" class="brand-yellow text-decoration-none fw-bold">Regístrate aquí</a>
+            <br>
+            <a href="/recuperar" class="text-secondary" style="font-size:0.9rem;">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <div class="text-center mt-4">
+            <small style="font-size: 0.75rem; color: #888;">© 2025 Marvin Gym · Desarrollado por <b class="brand-yellow">xp_afx</b></small>
         </div>
     </div>
+    <script>
+    function togglePass() {
+        var input = document.getElementById('password');
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+    </script>
 </body>
 </html>

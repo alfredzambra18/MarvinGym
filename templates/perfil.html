@@ -30,6 +30,7 @@
         .badge-Aprobado { background: #22c55e; color: #000; }
         .badge-Pendiente { background: #facc15; color: #000; }
         .badge-Rechazado { background: #ef4444; color: #fff; }
+        .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #666; }
     </style>
 </head>
 <body>
@@ -77,6 +78,7 @@
         </div>
 
         <form action="/reportar_pago" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="form-group">
                 <label>Tipo de Plan</label>
                 <select name="tipo_plan">
@@ -112,10 +114,10 @@
             <tbody>
                 {% for f in facturas %}
                 <tr>
-                    <td>{{ f[4][:10] }}</td>
-                    <td>{{ f[0] }} (${{ f[1] }})</td>
-                    <td>{{ f[2] }}</td>
-                    <td><span class="badge badge-{{ f[3] }}">{{ f[3] }}</span></td>
+                    <td>{{ f['fecha'][:10] }}</td>
+                    <td>{{ f['tipo_plan'] }} (${{ f['monto'] }})</td>
+                    <td>{{ f['referencia'] }}</td>
+                    <td><span class="badge badge-{{ f['estado'] }}">{{ f['estado'] }}</span></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -123,6 +125,10 @@
         {% else %}
         <p style="color: #71717a; font-style: italic; font-size: 13px;">No has reportado pagos aún.</p>
         {% endif %}
+    </div>
+
+    <div class="footer">
+        © 2025 Marvin Gym · <b style="color:#facc15;">xp_afx</b>
     </div>
 </body>
 </html>
